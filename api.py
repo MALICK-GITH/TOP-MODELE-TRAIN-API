@@ -1,0 +1,202 @@
+"""
+FIFA Virtual Prediction API
+===========================
+API REST pour les prédictions de matchs FIFA virtuels.
+
+Endpoints:
+  - GET  /health          : Vérifier la santé de l'API
+  - POST /predict         : Prédire le résultat d'un match
+  - POST /update-history  : Mettre à jour l'historique avec un match terminé
+  - GET  /families        : Lister les familles disponibles
+  - GET  /leagues         : Lister les ligues par famille
+
+Usage:
+  uvicorn api:app --host 0.0.0.0 --port 8000 --reload
+"""
+
+from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel, Field
+from typing import Optional, Dict, List
+import os
+import sys
+
+# Ajouter le répertoire courant au path pour importer train_random_forest
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
+from train_random_forest import ModelLoader, FAMILIES
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Configuration
+# ──────────────────────────────────────────────────────────────────────────────
+
+MODELS_DIR = "./models"
+app = FastAPI(
+    title="FIFA Virtual Prediction API",
+    description="API de prédiction pour matchs FIFA virtuels",
+    version="1.0.0"
+)
+
+# CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Loader de modèles (singleton)
+model_loader = None
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Pydantic Models
+# ──────────────────────────────────────────────────────────────────────────────
+
+class PredictionRequest(BaseModel):
+    team_home: str = Field(..., description="Équipe domicile")
+    team_away: str = Field(..., description="Équipe extérieur")
+    league: str = Field(..., description="Nom de la ligue/championnat")
+
+class UpdateHistoryRequest(BaseModel):
+    team_home: str = Field(..., description="Équipe domicile")
+    team_away: str = Field(..., description="Équipe extérieur")
+    league: str = Field(..., description="Nom de la ligue/championnat")
+    score_home: int = Field(..., description="Score domicile")
+    score_away: int = Field(..., description="Score extérieur")
+    finished_at: str = Field(..., description="Date de fin (ISO8601)")
+    family: Optional[str] = Field(None, description="Famille (optionnel, auto-détectée)")
+
+class HealthResponse(BaseModel):
+    status: str
+    models_loaded: bool
+    families: List[str]
+
+class FamiliesResponse(BaseModel):
+    families: Dict[str, Dict]
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Lifecycle
+# ──────────────────────────────────────────────────────────────────────────────
+
+@app.on_event("startup")
+async def startup_event():
+    """Charge les modèles au démarrage de l'API."""
+    global model_loader
+    print("🚀 Démarrage de l'API FIFA Prediction...")
+    model_loader = ModelLoader(MODELS_DIR)
+    model_loader.load_all()
+    print("✅ API prête")
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Endpoints
+# ──────────────────────────────────────────────────────────────────────────────
+
+@app.get("/health", response_model=HealthResponse)
+async def health():
+    """Vérifie la santé de l'API et le chargement des modèles."""
+    if model_loader is None:
+        return HealthResponse(
+            status="initializing",
+            models_loaded=False,
+            families=[]
+        )
+    
+    return HealthResponse(
+        status="healthy",
+        models_loaded=model_loader.loaded,
+        families=list(model_loader.models.keys())
+    )
+
+@app.get("/families", response_model=FamiliesResponse)
+async def get_families():
+    """Retourne la liste des familles disponibles avec leur configuration."""
+    return FamiliesResponse(families=FAMILIES)
+
+@app.get("/leagues/{family}")
+async def get_leagues(family: str):
+    """Retourne la liste des ligues pour une famille donnée."""
+    if model_loader is None or not model_loader.loaded:
+        raise HTTPException(status_code=503, detail="Modèles non chargés")
+    
+    if family not in model_loader.models:
+        raise HTTPException(status_code=404, detail=f"Famille {family} non trouvée")
+    
+    meta = model_loader.models[family]["meta"]
+    return {"family": family, "leagues": meta.get("leagues", [])}
+
+@app.post("/predict")
+async def predict(request: PredictionRequest):
+    """
+    Prédit le résultat d'un match FIFA virtuel.
+    
+    Retourne:
+      - result: prédiction du résultat (H/D/A) avec probabilités
+      - total_goals: prédiction du total de buts
+      - parity: prédiction pair/impair
+      - exact_score: prédiction du score exact
+    """
+    if model_loader is None or not model_loader.loaded:
+        raise HTTPException(status_code=503, detail="Modèles non chargés")
+    
+    try:
+        prediction = model_loader.predict(
+            team_home=request.team_home,
+            team_away=request.team_away,
+            league=request.league
+        )
+        return prediction
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erreur de prédiction: {str(e)}")
+
+@app.post("/update-history")
+async def update_history(request: UpdateHistoryRequest):
+    """
+    Met à jour l'historique des équipes avec un match terminé.
+    
+    Utile pour améliorer les prédictions futures avec les résultats réels.
+    """
+    if model_loader is None or not model_loader.loaded:
+        raise HTTPException(status_code=503, detail="Modèles non chargés")
+    
+    try:
+        model_loader.update_history({
+            "team_home": request.team_home,
+            "team_away": request.team_away,
+            "league": request.league,
+            "score_home": request.score_home,
+            "score_away": request.score_away,
+            "finished_at": request.finished_at,
+            "family": request.family
+        })
+        
+        return {"status": "success", "message": "Historique mis à jour"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erreur de mise à jour: {str(e)}")
+
+@app.post("/save-history")
+async def save_history(family: Optional[str] = None):
+    """
+    Sauvegarde l'historique mis à jour sur disque.
+    
+    Args:
+      family: si spécifié, sauvegarde seulement cette famille
+    """
+    if model_loader is None or not model_loader.loaded:
+        raise HTTPException(status_code=503, detail="Modèles non chargés")
+    
+    try:
+        model_loader.save_history(family)
+        return {"status": "success", "message": "Historique sauvegardé"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erreur de sauvegarde: {str(e)}")
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Main
+# ──────────────────────────────────────────────────────────────────────────────
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)
