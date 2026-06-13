@@ -68,6 +68,32 @@ FAMILIES = {
     },
 }
 
+# Mapping des ligues live vers ligues entraînées (pour compatibilité)
+# Mapping EN (API live 888starz) -> FR (CSV d'entraînement)
+LEAGUE_MAPPING = {
+    "FC 24. 4x4. England Championship": "FC 24. 4x4. Championnat d'Angleterre",
+    "FC 25. 3x3. Conference League": "FC 25. 3x3. Ligue de conférence",
+    "FC 25. Germany Championship": "FC 25. Championnat d'Allemagne",
+    "FC 25. England Championship": "FC 25. Championnat d'Angleterre",
+    "FC 25. Spain Championship": "FC 25. Championnat d'Espagne",
+    "FC 25. Champions League": "FC 25. Champions League",
+    "FC 25. Italy Championship": "FC 25. Italy Championship",
+    "FC 25. Europa League": "FC 25. Ligue européenne",
+    "FC 26. 5x5 Rush. Superleague": "FC 26. 5x5 Rush. Superligue",
+    "FC 26. World Championship": "FC 26. Championnat du monde",
+    "FC 26. Champions League": "FC 26. Champions League",
+    "FC24. Penalty": "FC24. Penalty",
+    "FC25. Penalty": "FC25. Penalty",
+    "FC26. Penalty": "FC26. Penalty",
+    "FIFA23. Penalty": "FIFA23. Penalty",
+    "Penalty": "Penalty",
+    "World Cup 2026. Simulation": "World Cup 2026. Simulation",
+}
+
+def map_league(league: str) -> str:
+    """Map une ligue live (EN) vers une ligue entraînée (FR)."""
+    return LEAGUE_MAPPING.get(league, league)
+
 # ──────────────────────────────────────────────────────────────────────────────
 # 2. CHARGEMENT ET PRÉPARATION DES DONNÉES
 # ──────────────────────────────────────────────────────────────────────────────
@@ -479,8 +505,15 @@ class ModelLoader:
         feat["home_team_freq"] = home_matches / total_matches if total_matches > 0 else 0
         feat["away_team_freq"] = away_matches / total_matches if total_matches > 0 else 0
         
-        # Encodage ligue
-        feat["league_enc"] = mdl["le_league"].transform([league])[0]
+        # Encodage ligue avec mapping pour les noms anglais
+        mapped_league = map_league(league)
+        
+        # Si la ligue mappée n'est pas connue, utiliser une valeur par défaut
+        try:
+            feat["league_enc"] = mdl["le_league"].transform([mapped_league])[0]
+        except ValueError:
+            # Ligue inconnue, utiliser la première classe comme fallback
+            feat["league_enc"] = 0
         
         # Construire X
         feature_cols = meta["feature_cols"]
@@ -499,28 +532,88 @@ class ModelLoader:
         exact_score = mdl["poisson_mdl"].predict_exact_score(X, max_goals=max_g)[0]
         lh, la = mdl["poisson_mdl"].predict_lambdas(X)
         
+        # Calculer les probabilités Over/Under pour différents seuils
+        # Utiliser la distribution de Poisson pour calculer P(total > threshold)
+        from scipy.stats import poisson as poisson_dist
+        
+        thresholds = [2.5, 3.5, 4.5, 5.5, 6.5]
+        over_under_probs = {}
+        
+        # Lambda total = lambda_home + lambda_away
+        lambda_total = float(lh[0]) + float(la[0])
+        
+        for threshold in thresholds:
+            # P(total > threshold) = 1 - P(total <= threshold)
+            prob_under = sum(poisson_dist.pmf(k, lambda_total) for k in range(int(threshold) + 1))
+            prob_over = 1 - prob_under
+            over_under_probs[str(threshold)] = {
+                "over": round(float(prob_over), 3),
+                "under": round(float(prob_under), 3)
+            }
+        
+        # Calculer les probabilités de handicap
+        # Handicap -1.0 pour home: P(home_score - 1 > away_score)
+        # Handicap +1.0 pour home: P(home_score + 1 > away_score)
+        handicap_probs = {}
+        
+        # Calculer la distribution de probabilité pour chaque score possible
+        score_probs = {}
+        for h in range(max_g + 1):
+            for a in range(max_g + 1):
+                prob_home = poisson_dist.pmf(h, float(lh[0]))
+                prob_away = poisson_dist.pmf(a, float(la[0]))
+                score_probs[(h, a)] = prob_home * prob_away
+        
+        # Normaliser les probabilités
+        total_prob = sum(score_probs.values())
+        score_probs = {k: v / total_prob for k, v in score_probs.items()}
+        
+        # Handicap -1.0 pour home
+        prob_handicap_home_minus1 = sum(p for (h, a), p in score_probs.items() if h - 1 > a)
+        prob_handicap_home_minus1_draw = sum(p for (h, a), p in score_probs.items() if h - 1 == a)
+        prob_handicap_home_minus1_away = 1 - prob_handicap_home_minus1 - prob_handicap_home_minus1_draw
+        
+        # Handicap +1.0 pour home
+        prob_handicap_home_plus1 = sum(p for (h, a), p in score_probs.items() if h + 1 > a)
+        prob_handicap_home_plus1_draw = sum(p for (h, a), p in score_probs.items() if h + 1 == a)
+        prob_handicap_home_plus1_away = 1 - prob_handicap_home_plus1 - prob_handicap_home_plus1_draw
+        
+        handicap_probs = {
+            "-1.0": {
+                "home": round(float(prob_handicap_home_minus1), 3),
+                "draw": round(float(prob_handicap_home_minus1_draw), 3),
+                "away": round(float(prob_handicap_home_minus1_away), 3)
+            },
+            "+1.0": {
+                "home": round(float(prob_handicap_home_plus1), 3),
+                "draw": round(float(prob_handicap_home_plus1_draw), 3),
+                "away": round(float(prob_handicap_home_plus1_away), 3)
+            }
+        }
+        
         output = {
             "match": f"{team_home} vs {team_away}",
             "league": league,
             "family": family,
-            "result": {
-                "prediction": result_pred,
-                "probabilities": {c: round(float(p), 3)
-                                  for c, p in zip(result_classes, result_proba)},
-            },
-            "total_goals": {
-                "prediction": round(total_goals_pred, 1),
-                "lambda_home": round(float(lh[0]), 2),
-                "lambda_away": round(float(la[0]), 2),
-            },
-            "parity": {
-                "prediction": parity_pred,
-                "prob_pair":   round(float(parity_proba[1]), 3),
-                "prob_impair": round(float(parity_proba[0]), 3),
-            },
-            "exact_score": {
-                "prediction": f"{exact_score[0]}-{exact_score[1]}",
-            },
+            "predictions": {
+                "1x2": {
+                    "home": round(float(result_proba[result_classes.tolist().index("H")]), 3) if "H" in result_classes else 0.0,
+                    "draw": round(float(result_proba[result_classes.tolist().index("D")]), 3) if "D" in result_classes else 0.0,
+                    "away": round(float(result_proba[result_classes.tolist().index("A")]), 3) if "A" in result_classes else 0.0,
+                },
+                "total_goals": {
+                    "predicted": round(total_goals_pred, 1),
+                    "over_under": over_under_probs
+                },
+                "handicap": handicap_probs,
+                "parity": {
+                    "pair": round(float(parity_proba[1]), 3),
+                    "impair": round(float(parity_proba[0]), 3)
+                },
+                "exact_score": {
+                    "prediction": f"{exact_score[0]}-{exact_score[1]}",
+                }
+            }
         }
         return output
     
