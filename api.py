@@ -49,6 +49,33 @@ app.add_middleware(
 # Loader de modèles (singleton)
 model_loader = None
 
+# Mapping des ligues live vers ligues entraînées (pour compatibilité)
+# Mapping EN (API live 888starz) -> FR (CSV d'entraînement)
+LEAGUE_MAPPING = {
+    # Mapping complet basé sur le fichier mapping_fr_en.md
+    "FC 24. 4x4. England Championship": "FC 24. 4x4. Championnat d'Angleterre",
+    "FC 25. 3x3. Conference League": "FC 25. 3x3. Ligue de conférence",
+    "FC 25. Germany Championship": "FC 25. Championnat d'Allemagne",
+    "FC 25. England Championship": "FC 25. Championnat d'Angleterre",
+    "FC 25. Spain Championship": "FC 25. Championnat d'Espagne",
+    "FC 25. Champions League": "FC 25. Champions League",
+    "FC 25. Italy Championship": "FC 25. Italy Championship",
+    "FC 25. Europa League": "FC 25. Ligue européenne",
+    "FC 26. 5x5 Rush. Superleague": "FC 26. 5x5 Rush. Superligue",
+    "FC 26. World Championship": "FC 26. Championnat du monde",
+    "FC 26. Champions League": "FC 26. Champions League",
+    "FC24. Penalty": "FC24. Penalty",
+    "FC25. Penalty": "FC25. Penalty",
+    "FC26. Penalty": "FC26. Penalty",
+    "FIFA23. Penalty": "FIFA23. Penalty",
+    "Penalty": "Penalty",
+    "World Cup 2026. Simulation": "World Cup 2026. Simulation",
+}
+
+def map_league(league: str) -> str:
+    """Map une ligue live (EN) vers une ligue entraînée (FR)."""
+    return LEAGUE_MAPPING.get(league, league)
+
 # ──────────────────────────────────────────────────────────────────────────────
 # Pydantic Models
 # ──────────────────────────────────────────────────────────────────────────────
@@ -140,10 +167,13 @@ async def predict(request: PredictionRequest):
         raise HTTPException(status_code=503, detail="Modèles non chargés")
     
     try:
+        # Map la ligue live vers la ligue entraînée
+        mapped_league = map_league(request.league)
+        
         prediction = model_loader.predict(
             team_home=request.team_home,
             team_away=request.team_away,
-            league=request.league
+            league=mapped_league
         )
         return prediction
     except ValueError as e:

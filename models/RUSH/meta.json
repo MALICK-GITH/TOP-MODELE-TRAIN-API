@@ -2,8 +2,8 @@
   "family": "RUSH",
   "description": "FC 26. 5x5 Rush — profil intermédiaire, grande variance",
   "has_draw": true,
-  "n_train": 530,
-  "n_test": 133,
+  "n_train": 549,
+  "n_test": 138,
   "feature_cols": [
     "home_w5_played",
     "home_w5_wins",
