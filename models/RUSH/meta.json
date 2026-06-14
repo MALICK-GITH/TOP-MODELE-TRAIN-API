@@ -2,9 +2,12 @@
   "family": "RUSH",
   "description": "FC 26. 5x5 Rush — profil intermédiaire, grande variance",
   "has_draw": true,
-  "n_train": 549,
-  "n_test": 138,
+  "n_train": 580,
+  "n_test": 146,
   "feature_cols": [
+    "home_team_freq",
+    "away_team_freq",
+    "league_enc",
     "home_w5_played",
     "home_w5_wins",
     "home_w5_draws",
@@ -48,10 +51,7 @@
     "diff_w10_win_rate",
     "diff_w10_gf",
     "diff_w10_ga",
-    "diff_w10_gd",
-    "home_team_freq",
-    "away_team_freq",
-    "league_enc"
+    "diff_w10_gd"
   ],
   "result_classes": [
     "A",
@@ -65,5 +65,6 @@
   "max_goals_poisson": 16,
   "leagues": [
     "FC 26. 5x5 Rush. Superligue"
-  ]
+  ],
+  "has_advanced_features": true
 }

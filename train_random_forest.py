@@ -70,24 +70,29 @@ FAMILIES = {
 
 # Mapping des ligues live vers ligues entraînées (pour compatibilité)
 # Mapping EN (API live 888starz) -> FR (CSV d'entraînement)
+# Couvre toutes les 17 ligues présentes dans les données d'entraînement
 LEAGUE_MAPPING = {
+    # HIGHSCORE (3x3, 4x4)
     "FC 24. 4x4. England Championship": "FC 24. 4x4. Championnat d'Angleterre",
     "FC 25. 3x3. Conference League": "FC 25. 3x3. Ligue de conférence",
+    # RUSH (5x5)
+    "FC 26. 5x5 Rush. Superleague": "FC 26. 5x5 Rush. Superligue",
+    # CLASSIC (championnats classiques)
     "FC 25. Germany Championship": "FC 25. Championnat d'Allemagne",
     "FC 25. England Championship": "FC 25. Championnat d'Angleterre",
     "FC 25. Spain Championship": "FC 25. Championnat d'Espagne",
     "FC 25. Champions League": "FC 25. Champions League",
     "FC 25. Italy Championship": "FC 25. Italy Championship",
     "FC 25. Europa League": "FC 25. Ligue européenne",
-    "FC 26. 5x5 Rush. Superleague": "FC 26. 5x5 Rush. Superligue",
     "FC 26. World Championship": "FC 26. Championnat du monde",
     "FC 26. Champions League": "FC 26. Champions League",
+    "World Cup 2026. Simulation": "World Cup 2026. Simulation",
+    # PENALTY (tirs au but)
     "FC24. Penalty": "FC24. Penalty",
     "FC25. Penalty": "FC25. Penalty",
     "FC26. Penalty": "FC26. Penalty",
     "FIFA23. Penalty": "FIFA23. Penalty",
     "Penalty": "Penalty",
-    "World Cup 2026. Simulation": "World Cup 2026. Simulation",
 }
 
 def map_league(league: str) -> str:
@@ -114,6 +119,16 @@ def load_data(csv_path: str) -> pd.DataFrame:
         else ("A" if r.score_away > r.score_home else "D"),
         axis=1,
     )
+    
+    # Détecter si les features sont déjà pré-calculées
+    has_advanced_features = "home_w5_played" in df.columns
+    
+    if has_advanced_features:
+        print("  ✅ Features avancées détectées dans le CSV (pas de recalcul nécessaire)")
+    else:
+        print("  ℹ️  Features avancées non détectées, calcul depuis l'historique...")
+    
+    df["_has_advanced_features"] = has_advanced_features
     return df
 
 
@@ -234,6 +249,7 @@ def get_feature_cols(df: pd.DataFrame) -> list:
         "id", "match_id", "team_home", "team_away", "league", "family",
         "finished_at", "created_at", "updated_at", "source",
         "score_home", "score_away", "total_goals", "goals_parity", "result",
+        "_has_advanced_features",  # Exclure le flag de détection
     }
     return [c for c in df.columns if c not in exclude]
 
@@ -261,10 +277,38 @@ def train_family(family: str, df_fam: pd.DataFrame, cfg: dict, out_dir: str, eva
         print(f"  ⚠️  Pas assez de données ({n} matchs). Famille ignorée.")
         return
 
-    # Features
-    feat_df, team_history = compute_team_features(df_fam.reset_index(drop=True))
-    full, le_league = build_features(df_fam.reset_index(drop=True), feat_df)
-    full = full.fillna(0)
+    # Vérifier si les features sont déjà pré-calculées
+    has_advanced_features = df_fam["_has_advanced_features"].iloc[0] if "_has_advanced_features" in df_fam.columns else False
+    
+    if has_advanced_features:
+        print("  ⚠️  Features avancées détectées mais ré-entraînement avec features de base pour compatibilité API")
+        # Supprimer toutes les colonnes de features pré-calculées pour éviter les conflits
+        feature_patterns = [
+            "home_w5_", "away_w5_", "diff_w5_", 
+            "home_w10_", "away_w10_", "diff_w10_",
+            "home_only_w5_", "away_only_w5_", "diff_home_away_only_w5_",
+            "home_only_w10_", "away_only_w10_", "diff_home_away_only_w10_",
+            "h2h_w5_", "h2h_w10_",
+            "home_win_streak", "home_loss_streak", "home_unbeaten_streak",
+            "away_win_streak", "away_loss_streak", "away_unbeaten_streak",
+            "diff_win_streak", "diff_loss_streak", "diff_unbeaten_streak",
+            "league_w20_", "league_w50_", "league_hist_",
+            "league_known", "league_goal_profile"
+        ]
+        cols_to_drop = [c for c in df_fam.columns if any(p in c for p in feature_patterns)]
+        df_fam_clean = df_fam.drop(columns=cols_to_drop, errors='ignore')
+        
+        # Recalculer les features de base
+        print("  → Calcul des features historiques (API-compatible)...")
+        feat_df, team_history = compute_team_features(df_fam_clean.reset_index(drop=True))
+        full, le_league = build_features(df_fam_clean.reset_index(drop=True), feat_df)
+        full = full.fillna(0)
+    else:
+        print("  → Calcul des features historiques...")
+        # Calculer les features comme avant
+        feat_df, team_history = compute_team_features(df_fam.reset_index(drop=True))
+        full, le_league = build_features(df_fam.reset_index(drop=True), feat_df)
+        full = full.fillna(0)
 
     feature_cols = get_feature_cols(full)
     X = full[feature_cols].values
@@ -404,17 +448,26 @@ def train_family(family: str, df_fam: pd.DataFrame, cfg: dict, out_dir: str, eva
     meta = {
         "family":        family,
         "description":   cfg["description"],
-        "has_draw":      has_draw,
-        "n_train":       len(tr),
-        "n_test":        len(te),
+        "has_draw":      bool(has_draw),
+        "n_train":       int(len(tr)),
+        "n_test":        int(len(te)),
         "feature_cols":  feature_cols,
         "result_classes": list(le_result.classes_),
         "typical_goals": cfg["typical_goals"],
         "max_goals_poisson": max_goals_poisson,
         "leagues":       list(df_fam["league"].unique()),
+        "has_advanced_features": bool(has_advanced_features),
     }
     joblib.dump(le_result, os.path.join(family_dir, "le_result.pkl"))
-    joblib.dump(le_league, os.path.join(family_dir, "le_league.pkl"))
+    
+    # Sauvegarder le_league seulement s'il a été créé (pas déjà encodé)
+    if le_league is not None:
+        joblib.dump(le_league, os.path.join(family_dir, "le_league.pkl"))
+    elif "league_enc" in full.columns:
+        # Créer un LabelEncoder factice pour compatibilité
+        le_league_dummy = LabelEncoder()
+        le_league_dummy.fit(full["league_enc"].unique())
+        joblib.dump(le_league_dummy, os.path.join(family_dir, "le_league.pkl"))
     with open(os.path.join(family_dir, "meta.json"), "w", encoding="utf-8") as f:
         json.dump(meta, f, indent=2, ensure_ascii=False)
 
@@ -534,26 +587,59 @@ class ModelLoader:
         
         # Calculer les probabilités Over/Under pour différents seuils
         # Utiliser la distribution de Poisson pour calculer P(total > threshold)
+        # Sélectionner intelligemment les seuils en fonction du total prédit
         from scipy.stats import poisson as poisson_dist
-        
-        thresholds = [2.5, 3.5, 4.5, 5.5, 6.5]
-        over_under_probs = {}
         
         # Lambda total = lambda_home + lambda_away
         lambda_total = float(lh[0]) + float(la[0])
         
+        # Sélectionner les seuils pertinents en fonction du total prédit
+        predicted_total = total_goals_pred
+        thresholds = []
+        
+        # Ajouter des seuils autour du total prédit
+        base_threshold = round(predicted_total / 0.5) * 0.5  # Arrondir au 0.5 le plus proche
+        
+        # Ajouter 3 seuils en dessous et 3 seuils au-dessus du total prédit
+        for i in range(-3, 4):
+            threshold = base_threshold + (i * 0.5)
+            if threshold >= 0.5:  # Minimum 0.5 buts
+                thresholds.append(threshold)
+        
+        # S'assurer qu'on a au moins quelques seuils standards
+        if not thresholds:
+            thresholds = [2.5, 3.5, 4.5, 5.5, 6.5]
+        
+        # Limiter à 7 seuils maximum pour éviter trop d'options
+        thresholds = sorted(set(thresholds))[:7]
+        
+        over_under_probs = {}
         for threshold in thresholds:
             # P(total > threshold) = 1 - P(total <= threshold)
             prob_under = sum(poisson_dist.pmf(k, lambda_total) for k in range(int(threshold) + 1))
             prob_over = 1 - prob_under
+            
+            # Ajuster pour cohérence avec le total prédit
+            # Si le total prédit est supérieur au seuil, over devrait être plus probable
+            if predicted_total > threshold:
+                # Augmenter la probabilité de over
+                adjustment = min(0.15, (predicted_total - threshold) * 0.05)
+                prob_over = min(0.95, prob_over + adjustment)
+                prob_under = 1 - prob_over
+            elif predicted_total < threshold:
+                # Diminuer la probabilité de over
+                adjustment = min(0.15, (threshold - predicted_total) * 0.05)
+                prob_over = max(0.05, prob_over - adjustment)
+                prob_under = 1 - prob_over
+            
             over_under_probs[str(threshold)] = {
                 "over": round(float(prob_over), 3),
                 "under": round(float(prob_under), 3)
             }
         
         # Calculer les probabilités de handicap
-        # Handicap -1.0 pour home: P(home_score - 1 > away_score)
-        # Handicap +1.0 pour home: P(home_score + 1 > away_score)
+        # Sélectionner intelligemment les handicaps en fonction de la différence de buts prédite
+        # ET assurer la cohérence avec le 1x2
         handicap_probs = {}
         
         # Calculer la distribution de probabilité pour chaque score possible
@@ -568,28 +654,72 @@ class ModelLoader:
         total_prob = sum(score_probs.values())
         score_probs = {k: v / total_prob for k, v in score_probs.items()}
         
-        # Handicap -1.0 pour home
-        prob_handicap_home_minus1 = sum(p for (h, a), p in score_probs.items() if h - 1 > a)
-        prob_handicap_home_minus1_draw = sum(p for (h, a), p in score_probs.items() if h - 1 == a)
-        prob_handicap_home_minus1_away = 1 - prob_handicap_home_minus1 - prob_handicap_home_minus1_draw
+        # Calculer la différence de buts prédite (lambda_home - lambda_away)
+        predicted_diff = float(lh[0]) - float(la[0])
         
-        # Handicap +1.0 pour home
-        prob_handicap_home_plus1 = sum(p for (h, a), p in score_probs.items() if h + 1 > a)
-        prob_handicap_home_plus1_draw = sum(p for (h, a), p in score_probs.items() if h + 1 == a)
-        prob_handicap_home_plus1_away = 1 - prob_handicap_home_plus1 - prob_handicap_home_plus1_draw
+        # Sélectionner les handicaps pertinents en fonction de la différence prédite
+        handicaps = []
+        base_handicap = round(predicted_diff)  # Arrondir à l'entier le plus proche
         
-        handicap_probs = {
-            "-1.0": {
-                "home": round(float(prob_handicap_home_minus1), 3),
-                "draw": round(float(prob_handicap_home_minus1_draw), 3),
-                "away": round(float(prob_handicap_home_minus1_away), 3)
-            },
-            "+1.0": {
-                "home": round(float(prob_handicap_home_plus1), 3),
-                "draw": round(float(prob_handicap_home_plus1_draw), 3),
-                "away": round(float(prob_handicap_home_plus1_away), 3)
+        # Ajouter des handicaps autour de la différence prédite
+        for i in range(-2, 3):
+            handicap = base_handicap + i
+            if handicap != 0:  # Exclure handicap 0 (nul)
+                handicaps.append(handicap)
+        
+        # S'assurer qu'on a au moins quelques handicaps standards
+        if not handicaps:
+            handicaps = [-1.0, 1.0]
+        
+        # Limiter à 5 handicaps maximum
+        handicaps = sorted(set(handicaps))[:5]
+        
+        for handicap in handicaps:
+            # Handicap pour home: P(home_score + handicap > away_score)
+            prob_handicap_home = sum(p for (h, a), p in score_probs.items() if h + handicap > a)
+            prob_handicap_draw = sum(p for (h, a), p in score_probs.items() if h + handicap == a)
+            prob_handicap_away = 1 - prob_handicap_home - prob_handicap_draw
+            
+            # Ajuster pour cohérence avec 1x2
+            # Si home est favori dans 1x2, les handicaps positifs pour home devraient être plus probables
+            home_1x2_prob = result_proba[result_classes.tolist().index("H")] if "H" in result_classes else 0.5
+            away_1x2_prob = result_proba[result_classes.tolist().index("A")] if "A" in result_classes else 0.5
+            
+            # Ajustement progressif basé sur le handicap
+            if handicap > 0 and home_1x2_prob > 0.5:
+                # Handicap positif pour home quand home est favori: augmenter prob home
+                adjustment_factor = 0.1 * min(handicap, 3)  # Max 30% d'ajustement
+                prob_handicap_home = min(0.95, prob_handicap_home + adjustment_factor)
+                # S'assurer que away reste positif
+                prob_handicap_away = max(0.01, 1 - prob_handicap_home - prob_handicap_draw)
+                # Réajuster home si nécessaire pour que la somme = 1
+                if prob_handicap_home + prob_handicap_draw + prob_handicap_away > 1:
+                    prob_handicap_home = 1 - prob_handicap_draw - prob_handicap_away
+            elif handicap < 0 and home_1x2_prob > 0.5:
+                # Handicap négatif pour home quand home est favori: diminuer prob home
+                adjustment_factor = 0.1 * min(abs(handicap), 3)
+                prob_handicap_home = max(0.05, prob_handicap_home - adjustment_factor)
+                prob_handicap_away = 1 - prob_handicap_home - prob_handicap_draw
+            elif handicap > 0 and away_1x2_prob > 0.5:
+                # Handicap positif pour home quand away est favori: diminuer prob home
+                adjustment_factor = 0.1 * min(handicap, 3)
+                prob_handicap_home = max(0.05, prob_handicap_home - adjustment_factor)
+                prob_handicap_away = 1 - prob_handicap_home - prob_handicap_draw
+            elif handicap < 0 and away_1x2_prob > 0.5:
+                # Handicap négatif pour home quand away est favori: augmenter prob home
+                adjustment_factor = 0.1 * min(abs(handicap), 3)
+                prob_handicap_home = min(0.95, prob_handicap_home + adjustment_factor)
+                # S'assurer que away reste positif
+                prob_handicap_away = max(0.01, 1 - prob_handicap_home - prob_handicap_draw)
+                # Réajuster home si nécessaire pour que la somme = 1
+                if prob_handicap_home + prob_handicap_draw + prob_handicap_away > 1:
+                    prob_handicap_home = 1 - prob_handicap_draw - prob_handicap_away
+            
+            handicap_probs[str(handicap)] = {
+                "home": round(float(prob_handicap_home), 3),
+                "draw": round(float(prob_handicap_draw), 3),
+                "away": round(float(prob_handicap_away), 3)
             }
-        }
         
         output = {
             "match": f"{team_home} vs {team_away}",
@@ -737,13 +867,18 @@ def compute_single_match_features(team_home: str, team_away: str, match_time: pd
     Calcule les features pour un seul match à partir de l'historique pré-calculé.
     Évite de recalculer tout l'historique à chaque appel API.
     """
-    def get_stats_from_history(team: str, before_dt: pd.Timestamp, window: int) -> dict:
+    def get_stats_from_history(team: str, before_dt: pd.Timestamp, window: int, is_home_only: bool = False) -> dict:
         hist = team_history.get(team, pd.DataFrame())
         if hist.empty:
             return _empty_stats(window)
         
         # Filtrer les matchs avant la date courante
         hist["finished_at"] = pd.to_datetime(hist["finished_at"], utc=True)
+        
+        # Filtrer par domicile/extérieur si demandé
+        if is_home_only:
+            hist = hist[hist["is_home"] == 1]
+        
         past = hist[hist["finished_at"] < before_dt].tail(window)
         
         if past.empty:
@@ -766,25 +901,94 @@ def compute_single_match_features(team_home: str, team_away: str, match_time: pd
             f"w{window}_gd":        gf - ga,
             f"w{window}_win_rate":  wins / n,
             f"w{window}_draw_rate": draws / n,
+            f"w{window}_unbeaten_rate": (wins + draws) / n,
+            f"w{window}_form_points": wins * 3 + draws,
+            f"w{window}_form_ppg": (wins * 3 + draws) / n,
+        }
+    
+    def get_h2h_stats(team_home: str, team_away: str, before_dt: pd.Timestamp, window: int) -> dict:
+        """Calcule les stats tête-à-tête entre deux équipes."""
+        hist_home = team_history.get(team_home, pd.DataFrame())
+        hist_away = team_history.get(team_away, pd.DataFrame())
+        
+        if hist_home.empty or hist_away.empty:
+            return _empty_h2h_stats(window)
+        
+        hist_home["finished_at"] = pd.to_datetime(hist_home["finished_at"], utc=True)
+        hist_away["finished_at"] = pd.to_datetime(hist_away["finished_at"], utc=True)
+        
+        # Trouver les matchs où les deux équipes se sont affrontées
+        # On regarde du point de vue de team_home
+        h2h_matches = hist_home[
+            (hist_home["finished_at"] < before_dt) &
+            (hist_home["finished_at"].isin(hist_away["finished_at"]))
+        ].tail(window)
+        
+        if h2h_matches.empty:
+            return _empty_h2h_stats(window)
+        
+        n = len(h2h_matches)
+        home_wins = (h2h_matches["win"] == 1).sum()
+        draws = (h2h_matches["draw"] == 1).sum()
+        away_wins = n - home_wins - draws
+        home_gf = h2h_matches["goals_for"].mean()
+        away_gf = h2h_matches["goals_against"].mean()
+        
+        return {
+            f"h2h_w{window}_played": n,
+            f"h2h_w{window}_home_win_rate": home_wins / n,
+            f"h2h_w{window}_draw_rate": draws / n,
+            f"h2h_w{window}_away_win_rate": away_wins / n,
+            f"h2h_w{window}_home_gf": home_gf,
+            f"h2h_w{window}_away_gf": away_gf,
+            f"h2h_w{window}_goal_diff": home_gf - away_gf,
         }
     
     def _empty_stats(window: int) -> dict:
-        keys = ["played", "wins", "draws", "losses", "gf", "ga", "gd", "win_rate", "draw_rate"]
+        keys = ["played", "wins", "draws", "losses", "gf", "ga", "gd", "win_rate", "draw_rate", "unbeaten_rate", "form_points", "form_ppg"]
         return {f"w{window}_{k}": 0.0 for k in keys}
+    
+    def _empty_h2h_stats(window: int) -> dict:
+        keys = ["played", "home_win_rate", "draw_rate", "away_win_rate", "home_gf", "away_gf", "goal_diff"]
+        return {f"h2h_w{window}_{k}": 0.0 for k in keys}
     
     feat = {}
     for w in windows:
-        h_stats = get_stats_from_history(team_home, match_time, w)
-        a_stats = get_stats_from_history(team_away, match_time, w)
+        # Stats générales
+        h_stats = get_stats_from_history(team_home, match_time, w, is_home_only=False)
+        a_stats = get_stats_from_history(team_away, match_time, w, is_home_only=False)
+        
         for k, v in h_stats.items():
             feat[f"home_{k}"] = v
         for k, v in a_stats.items():
             feat[f"away_{k}"] = v
+        
         # Features différentielles
         feat[f"diff_w{w}_win_rate"]  = h_stats[f"w{w}_win_rate"]  - a_stats[f"w{w}_win_rate"]
+        feat[f"diff_w{w}_unbeaten_rate"] = h_stats[f"w{w}_unbeaten_rate"] - a_stats[f"w{w}_unbeaten_rate"]
+        feat[f"diff_w{w}_form_points"] = h_stats[f"w{w}_form_points"] - a_stats[f"w{w}_form_points"]
+        feat[f"diff_w{w}_form_ppg"] = h_stats[f"w{w}_form_ppg"] - a_stats[f"w{w}_form_ppg"]
         feat[f"diff_w{w}_gf"]        = h_stats[f"w{w}_gf"]        - a_stats[f"w{w}_gf"]
         feat[f"diff_w{w}_ga"]        = h_stats[f"w{w}_ga"]        - a_stats[f"w{w}_ga"]
         feat[f"diff_w{w}_gd"]        = h_stats[f"w{w}_gd"]        - a_stats[f"w{w}_gd"]
+        
+        # Stats domicile/extérieur uniquement
+        h_only_stats = get_stats_from_history(team_home, match_time, w, is_home_only=True)
+        a_only_stats = get_stats_from_history(team_away, match_time, w, is_home_only=True)
+        
+        for k, v in h_only_stats.items():
+            feat[f"home_only_{k}"] = v
+        for k, v in a_only_stats.items():
+            feat[f"away_only_{k}"] = v
+        
+        # Features différentielles domicile/extérieur uniquement
+        feat[f"diff_home_away_only_w{w}_form_ppg"] = h_only_stats[f"w{w}_form_ppg"] - a_only_stats[f"w{w}_form_ppg"]
+        feat[f"diff_home_away_only_w{w}_unbeaten_rate"] = h_only_stats[f"w{w}_unbeaten_rate"] - a_only_stats[f"w{w}_unbeaten_rate"]
+        
+        # Stats tête-à-tête
+        h2h_stats = get_h2h_stats(team_home, team_away, match_time, w)
+        for k, v in h2h_stats.items():
+            feat[k] = v
     
     return feat
 
