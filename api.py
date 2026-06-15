@@ -26,6 +26,14 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from train_random_forest import ModelLoader, FAMILIES, map_league
 
+# Import du cache Upstash (optionnel)
+try:
+    from upstash_cache import get_cache
+    CACHE_AVAILABLE = True
+except ImportError:
+    CACHE_AVAILABLE = False
+    print("⚠️  Cache Upstash non disponible (upstash_redis non installé)")
+
 # ──────────────────────────────────────────────────────────────────────────────
 # Configuration
 # ──────────────────────────────────────────────────────────────────────────────
@@ -48,6 +56,9 @@ app.add_middleware(
 
 # Loader de modèles (singleton)
 model_loader = None
+
+# Cache Upstash (singleton)
+cache_instance = None
 
 # ──────────────────────────────────────────────────────────────────────────────
 # Pydantic Models
@@ -82,10 +93,24 @@ class FamiliesResponse(BaseModel):
 @app.on_event("startup")
 async def startup_event():
     """Charge les modèles au démarrage de l'API."""
-    global model_loader
+    global model_loader, cache_instance
     print("🚀 Démarrage de l'API FIFA Prediction...")
     model_loader = ModelLoader(MODELS_DIR)
     model_loader.load_all()
+    
+    # Initialiser le cache Upstash si disponible
+    if CACHE_AVAILABLE:
+        try:
+            cache_instance = get_cache()
+            if cache_instance.ping():
+                print("✅ Cache Upstash initialisé")
+            else:
+                print("⚠️  Cache Upstash non disponible (connexion échouée)")
+                cache_instance = None
+        except Exception as e:
+            print(f"⚠️  Cache Upstash non disponible: {e}")
+            cache_instance = None
+    
     print("✅ API prête")
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -143,11 +168,26 @@ async def predict(request: PredictionRequest):
         # Map la ligue live vers la ligue entraînée
         mapped_league = map_league(request.league)
         
+        # Générer la clé de cache
+        cache_key = f"predict:{request.team_home}:{request.team_away}:{mapped_league}"
+        
+        # Essayer de récupérer du cache
+        if cache_instance:
+            cached_result = cache_instance.get(cache_key)
+            if cached_result:
+                return cached_result
+        
+        # Calculer la prédiction
         prediction = model_loader.predict(
             team_home=request.team_home,
             team_away=request.team_away,
             league=mapped_league
         )
+        
+        # Stocker dans le cache (5 minutes)
+        if cache_instance:
+            cache_instance.set(cache_key, prediction, ttl=300)
+        
         return prediction
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -195,6 +235,23 @@ async def save_history(family: Optional[str] = None):
         return {"status": "success", "message": "Historique sauvegardé"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Erreur de sauvegarde: {str(e)}")
+
+@app.post("/clear-cache")
+async def clear_cache():
+    """
+    Nettoie le cache des prédictions.
+    
+    Utile pour forcer le recalcul des prédictions après une mise à jour des modèles.
+    """
+    if cache_instance is None:
+        raise HTTPException(status_code=503, detail="Cache non disponible")
+    
+    try:
+        # Nettoyer toutes les clés de prédictions
+        cache_instance.clear_pattern("predict:*")
+        return {"status": "success", "message": "Cache nettoyé"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erreur de nettoyage: {str(e)}")
 
 # ──────────────────────────────────────────────────────────────────────────────
 # Main
