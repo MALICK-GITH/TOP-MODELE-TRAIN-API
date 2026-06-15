@@ -4,14 +4,14 @@
 
 L'API FIFA Virtual Prediction permet de prédire les résultats de matchs FIFA virtuels en utilisant des modèles de machine learning entraînés sur des données historiques. L'API supporte plusieurs familles de championnats avec des caractéristiques différentes et fournit des prédictions cohérentes et adaptées aux options de paris réelles.
 
-**Version:** 2.0.0  
+**Version:** 2.1.0  
 **Base URL (Production):** `https://top-modele-train-api.onrender.com`  
 **Base URL (Local):** `http://localhost:8000`  
 **Statut:** ✅ Opérationnel en production  
-**Données d'entraînement:** 11,587 matchs historiques  
+**Données d'entraînement:** 13,262 matchs historiques  
 **Familles supportées:** 4 (PENALTY, HIGHSCORE, RUSH, CLASSIC)  
 **Ligues supportées:** 17 ligues FIFA virtuelles  
-**Dernière mise à jour:** 14 Juin 2026
+**Dernière mise à jour:** 15 Juin 2026 à 1h27 UTC
 
 ---
 
@@ -50,29 +50,29 @@ curl -X POST https://top-modele-train-api.onrender.com/predict \
 ## 📊 Ligues Supportées (17 ligues au total)
 
 ### PENALTY (5 ligues)
-- **FC25. Penalty**: 1,608 matchs
-- **FC24. Penalty**: 1,360 matchs
-- **Penalty**: 2,112 matchs
-- **FIFA23. Penalty**: 87 matchs
-- **FC26. Penalty**: 255 matchs
+- **FC25. Penalty**: 1,838 matchs
+- **FC24. Penalty**: 1,586 matchs
+- **Penalty**: 2,419 matchs
+- **FIFA23. Penalty**: 99 matchs
+- **FC26. Penalty**: 335 matchs
 
 ### HIGHSCORE (2 ligues)
-- **FC 24. 4x4. Championnat d'Angleterre**: 776 matchs
-- **FC 25. 3x3. Ligue de conférence**: 883 matchs
+- **FC 24. 4x4. Championnat d'Angleterre**: 875 matchs
+- **FC 25. 3x3. Ligue de conférence**: 992 matchs
 
 ### RUSH (1 ligue)
-- **FC 26. 5x5 Rush. Superligue**: 726 matchs
+- **FC 26. 5x5 Rush. Superligue**: 810 matchs
 
 ### CLASSIC (9 ligues)
-- **FC 25. Champions League**: 430 matchs
-- **FC 26. Champions League**: 443 matchs
-- **FC 25. Championnat d'Angleterre**: 463 matchs
-- **FC 26. Championnat du monde**: 449 matchs
-- **FC 25. Championnat d'Espagne**: 470 matchs
-- **FC 25. Ligue européenne**: 455 matchs
-- **FC 25. Italy Championship**: 461 matchs
-- **FC 25. Championnat d'Allemagne**: 434 matchs
-- **World Cup 2026. Simulation**: 175 matchs
+- **FC 25. Champions League**: 502 matchs
+- **FC 26. Champions League**: 502 matchs
+- **FC 25. Championnat d'Angleterre**: 526 matchs
+- **FC 26. Championnat du monde**: 502 matchs
+- **FC 25. Championnat d'Espagne**: 532 matchs
+- **FC 25. Ligue européenne**: 521 matchs
+- **FC 25. Italy Championship**: 519 matchs
+- **FC 25. Championnat d'Allemagne**: 499 matchs
+- **World Cup 2026. Simulation**: 220 matchs
 
 ---
 
@@ -399,17 +399,25 @@ L'API assure la cohérence entre toutes les prédictions pour éviter des résul
 ### Cohérence 1x2 ↔ Handicap
 - Si home est favori dans 1x2 (ex: 76%), les handicaps positifs pour home sont plus probables
 - Si away est favori dans 1x2, les handicaps négatifs pour home sont plus probables
-- Les handicaps sont ajustés progressivement (10% par unité) pour éviter les changements brusques
+- Les handicaps sont ajustés progressivement (20% par unité) pour éviter les changements brusques
+- Forçage de la cohérence: si le favori n'est pas correct, les probabilités sont ajustées (0.6/0.2/0.2)
 
 ### Cohérence Total Goals ↔ Over/Under
 - Si le total prédit est supérieur au seuil, over est favorisé
 - Si le total prédit est inférieur au seuil, under est favorisé
 - Les seuils sont sélectionnés dynamiquement autour du total prédit (±3 seuils)
+- Ajustement renforcé (40% max) pour garantir la cohérence
+- Forçage de la cohérence: si total > seuil, over > under (0.6/0.4)
 
 ### Seuils Dynamiques
 - **Over/Under**: Sélectionnés autour du total prédit (ex: total 8.5 → seuils 7.0, 7.5, 8.0, 8.5, 9.0, 9.5, 10.0)
 - **Handicap**: Sélectionnés autour de la différence prédite (ex: diff ~1 → handicaps -2, -1, 1, 2)
 - Maximum 7 seuils over/under et 5 handicaps pour éviter la surcharge d'informations
+
+### Validation de Cohérence
+- Tous les seuils over/under sont validés pour garantir la cohérence avec le total prédit
+- Tous les handicaps sont validés pour garantir la cohérence avec les prédictions 1x2
+- Tests automatiques sur toutes les familles (CLASSIC, HIGHSCORE, RUSH, PENALTY)
 
 ---
 
@@ -885,6 +893,18 @@ Pour toute question ou problème, contactez l'équipe de développement.
 
 ## 📝 Changelog
 
+### Version 2.1.0 (15 Juin 2026 à 1h27 UTC)
+- **Correction critique**: Renforcement de la cohérence des prédictions (over/under et handicap)
+- Ajustement plus fort pour over/under (40% au lieu de 15%)
+- Forçage de la cohérence over/under: si total > seuil, over > under
+- Ajustement plus fort pour handicap (20% au lieu de 10%)
+- Forçage de la cohérence handicap: si home favori en 1x2, handicaps positifs favorisent home
+- Réentraînement des modèles avec dataset actualisé (13,262 matchs)
+- Période du dataset: 27 mai 2026 - 14 juin 2026
+- Sources multiples: 888starz et cron-learning
+- Tests validés: cohérence parfaite sur toutes les familles
+- Résolution du problème d'incohérence des options de paris sur la plateforme
+
 ### Version 2.0.0 (14 Juin 2026)
 - Ajout de la cohérence entre les prédictions (1x2 ↔ handicap, total_goals ↔ over/under)
 - Sélection dynamique des seuils over/under et handicap
@@ -901,6 +921,6 @@ Pour toute question ou problème, contactez l'équipe de développement.
 ---
 
 **Document généré par SOLITAIRE HACK**  
-*Dernière mise à jour : 14 Juin 2026*  
-*Version : 2.0.0 - Production*  
+*Dernière mise à jour : 15 Juin 2026 à 1h27 UTC*  
+*Version : 2.1.0 - Production*  
 *Tous droits réservés*
