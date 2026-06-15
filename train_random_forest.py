@@ -622,15 +622,25 @@ class ModelLoader:
             # Ajuster pour cohérence avec le total prédit
             # Si le total prédit est supérieur au seuil, over devrait être plus probable
             if predicted_total > threshold:
-                # Augmenter la probabilité de over
-                adjustment = min(0.15, (predicted_total - threshold) * 0.05)
+                # Forcer over à être > under
+                diff = predicted_total - threshold
+                adjustment = min(0.4, diff * 0.1)  # Ajustement plus fort
                 prob_over = min(0.95, prob_over + adjustment)
                 prob_under = 1 - prob_over
+                # S'assurer que over > under
+                if prob_over <= prob_under:
+                    prob_over = 0.6
+                    prob_under = 0.4
             elif predicted_total < threshold:
-                # Diminuer la probabilité de over
-                adjustment = min(0.15, (threshold - predicted_total) * 0.05)
+                # Forcer under à être > over
+                diff = threshold - predicted_total
+                adjustment = min(0.4, diff * 0.1)  # Ajustement plus fort
                 prob_over = max(0.05, prob_over - adjustment)
                 prob_under = 1 - prob_over
+                # S'assurer que under > over
+                if prob_under <= prob_over:
+                    prob_over = 0.4
+                    prob_under = 0.6
             
             over_under_probs[str(threshold)] = {
                 "over": round(float(prob_over), 3),
@@ -687,33 +697,53 @@ class ModelLoader:
             
             # Ajustement progressif basé sur le handicap
             if handicap > 0 and home_1x2_prob > 0.5:
-                # Handicap positif pour home quand home est favori: augmenter prob home
-                adjustment_factor = 0.1 * min(handicap, 3)  # Max 30% d'ajustement
+                # Handicap positif pour home quand home est favori: forcer home à être favori
+                adjustment_factor = 0.2 * min(handicap, 3)  # Ajustement plus fort (max 60%)
                 prob_handicap_home = min(0.95, prob_handicap_home + adjustment_factor)
                 # S'assurer que away reste positif
                 prob_handicap_away = max(0.01, 1 - prob_handicap_home - prob_handicap_draw)
                 # Réajuster home si nécessaire pour que la somme = 1
                 if prob_handicap_home + prob_handicap_draw + prob_handicap_away > 1:
                     prob_handicap_home = 1 - prob_handicap_draw - prob_handicap_away
+                # Forcer home à être le favori
+                if prob_handicap_home <= max(prob_handicap_draw, prob_handicap_away):
+                    prob_handicap_home = 0.6
+                    prob_handicap_draw = 0.2
+                    prob_handicap_away = 0.2
             elif handicap < 0 and home_1x2_prob > 0.5:
-                # Handicap négatif pour home quand home est favori: diminuer prob home
-                adjustment_factor = 0.1 * min(abs(handicap), 3)
+                # Handicap négatif pour home quand home est favori: forcer away à être favori
+                adjustment_factor = 0.2 * min(abs(handicap), 3)
                 prob_handicap_home = max(0.05, prob_handicap_home - adjustment_factor)
                 prob_handicap_away = 1 - prob_handicap_home - prob_handicap_draw
+                # Forcer away à être le favori
+                if prob_handicap_away <= max(prob_handicap_home, prob_handicap_draw):
+                    prob_handicap_home = 0.2
+                    prob_handicap_draw = 0.2
+                    prob_handicap_away = 0.6
             elif handicap > 0 and away_1x2_prob > 0.5:
-                # Handicap positif pour home quand away est favori: diminuer prob home
-                adjustment_factor = 0.1 * min(handicap, 3)
+                # Handicap positif pour home quand away est favori: forcer away à être favori
+                adjustment_factor = 0.2 * min(handicap, 3)
                 prob_handicap_home = max(0.05, prob_handicap_home - adjustment_factor)
                 prob_handicap_away = 1 - prob_handicap_home - prob_handicap_draw
+                # Forcer away à être le favori
+                if prob_handicap_away <= max(prob_handicap_home, prob_handicap_draw):
+                    prob_handicap_home = 0.2
+                    prob_handicap_draw = 0.2
+                    prob_handicap_away = 0.6
             elif handicap < 0 and away_1x2_prob > 0.5:
-                # Handicap négatif pour home quand away est favori: augmenter prob home
-                adjustment_factor = 0.1 * min(abs(handicap), 3)
+                # Handicap négatif pour home quand away est favori: forcer home à être favori
+                adjustment_factor = 0.2 * min(abs(handicap), 3)
                 prob_handicap_home = min(0.95, prob_handicap_home + adjustment_factor)
                 # S'assurer que away reste positif
                 prob_handicap_away = max(0.01, 1 - prob_handicap_home - prob_handicap_draw)
                 # Réajuster home si nécessaire pour que la somme = 1
                 if prob_handicap_home + prob_handicap_draw + prob_handicap_away > 1:
                     prob_handicap_home = 1 - prob_handicap_draw - prob_handicap_away
+                # Forcer home à être le favori
+                if prob_handicap_home <= max(prob_handicap_draw, prob_handicap_away):
+                    prob_handicap_home = 0.6
+                    prob_handicap_draw = 0.2
+                    prob_handicap_away = 0.2
             
             handicap_probs[str(handicap)] = {
                 "home": round(float(prob_handicap_home), 3),
