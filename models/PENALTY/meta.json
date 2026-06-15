@@ -2,12 +2,9 @@
   "family": "PENALTY",
   "description": "Séances de tirs au but — 2 issues possibles, scores élevés",
   "has_draw": false,
-  "n_train": 4337,
-  "n_test": 1085,
+  "n_train": 5021,
+  "n_test": 1256,
   "feature_cols": [
-    "home_team_freq",
-    "away_team_freq",
-    "league_enc",
     "home_w5_played",
     "home_w5_wins",
     "home_w5_draws",
@@ -51,7 +48,10 @@
     "diff_w10_win_rate",
     "diff_w10_gf",
     "diff_w10_ga",
-    "diff_w10_gd"
+    "diff_w10_gd",
+    "home_team_freq",
+    "away_team_freq",
+    "league_enc"
   ],
   "result_classes": [
     "A",
@@ -69,5 +69,5 @@
     "FIFA23. Penalty",
     "FC26. Penalty"
   ],
-  "has_advanced_features": true
+  "has_advanced_features": false
 }

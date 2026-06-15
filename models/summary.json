@@ -3,12 +3,9 @@
     "family": "PENALTY",
     "description": "Séances de tirs au but — 2 issues possibles, scores élevés",
     "has_draw": false,
-    "n_train": 4337,
-    "n_test": 1085,
+    "n_train": 5021,
+    "n_test": 1256,
     "feature_cols": [
-      "home_team_freq",
-      "away_team_freq",
-      "league_enc",
       "home_w5_played",
       "home_w5_wins",
       "home_w5_draws",
@@ -52,7 +49,10 @@
       "diff_w10_win_rate",
       "diff_w10_gf",
       "diff_w10_ga",
-      "diff_w10_gd"
+      "diff_w10_gd",
+      "home_team_freq",
+      "away_team_freq",
+      "league_enc"
     ],
     "result_classes": [
       "A",
@@ -70,18 +70,15 @@
       "FIFA23. Penalty",
       "FC26. Penalty"
     ],
-    "has_advanced_features": true
+    "has_advanced_features": false
   },
   "HIGHSCORE": {
     "family": "HIGHSCORE",
     "description": "Formats 3x3 / 4x4 — scores très élevés (~15 buts/match)",
     "has_draw": true,
-    "n_train": 1327,
-    "n_test": 332,
+    "n_train": 1493,
+    "n_test": 374,
     "feature_cols": [
-      "home_team_freq",
-      "away_team_freq",
-      "league_enc",
       "home_w5_played",
       "home_w5_wins",
       "home_w5_draws",
@@ -125,7 +122,10 @@
       "diff_w10_win_rate",
       "diff_w10_gf",
       "diff_w10_ga",
-      "diff_w10_gd"
+      "diff_w10_gd",
+      "home_team_freq",
+      "away_team_freq",
+      "league_enc"
     ],
     "result_classes": [
       "A",
@@ -141,18 +141,15 @@
       "FC 24. 4x4. Championnat d'Angleterre",
       "FC 25. 3x3. Ligue de conférence"
     ],
-    "has_advanced_features": true
+    "has_advanced_features": false
   },
   "RUSH": {
     "family": "RUSH",
     "description": "FC 26. 5x5 Rush — profil intermédiaire, grande variance",
     "has_draw": true,
-    "n_train": 580,
-    "n_test": 146,
+    "n_train": 648,
+    "n_test": 162,
     "feature_cols": [
-      "home_team_freq",
-      "away_team_freq",
-      "league_enc",
       "home_w5_played",
       "home_w5_wins",
       "home_w5_draws",
@@ -196,7 +193,10 @@
       "diff_w10_win_rate",
       "diff_w10_gf",
       "diff_w10_ga",
-      "diff_w10_gd"
+      "diff_w10_gd",
+      "home_team_freq",
+      "away_team_freq",
+      "league_enc"
     ],
     "result_classes": [
       "A",
@@ -211,18 +211,15 @@
     "leagues": [
       "FC 26. 5x5 Rush. Superligue"
     ],
-    "has_advanced_features": true
+    "has_advanced_features": false
   },
   "CLASSIC": {
     "family": "CLASSIC",
     "description": "Championnats classiques simulés — proche du football réel",
     "has_draw": true,
-    "n_train": 3024,
-    "n_test": 756,
+    "n_train": 3446,
+    "n_test": 862,
     "feature_cols": [
-      "home_team_freq",
-      "away_team_freq",
-      "league_enc",
       "home_w5_played",
       "home_w5_wins",
       "home_w5_draws",
@@ -266,7 +263,10 @@
       "diff_w10_win_rate",
       "diff_w10_gf",
       "diff_w10_ga",
-      "diff_w10_gd"
+      "diff_w10_gd",
+      "home_team_freq",
+      "away_team_freq",
+      "league_enc"
     ],
     "result_classes": [
       "A",
@@ -289,6 +289,6 @@
       "FC 25. Championnat d'Allemagne",
       "World Cup 2026. Simulation"
     ],
-    "has_advanced_features": true
+    "has_advanced_features": false
   }
 }

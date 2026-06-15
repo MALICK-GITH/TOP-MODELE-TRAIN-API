@@ -2,12 +2,9 @@
   "family": "HIGHSCORE",
   "description": "Formats 3x3 / 4x4 — scores très élevés (~15 buts/match)",
   "has_draw": true,
-  "n_train": 1327,
-  "n_test": 332,
+  "n_train": 1493,
+  "n_test": 374,
   "feature_cols": [
-    "home_team_freq",
-    "away_team_freq",
-    "league_enc",
     "home_w5_played",
     "home_w5_wins",
     "home_w5_draws",
@@ -51,7 +48,10 @@
     "diff_w10_win_rate",
     "diff_w10_gf",
     "diff_w10_ga",
-    "diff_w10_gd"
+    "diff_w10_gd",
+    "home_team_freq",
+    "away_team_freq",
+    "league_enc"
   ],
   "result_classes": [
     "A",
@@ -67,5 +67,5 @@
     "FC 24. 4x4. Championnat d'Angleterre",
     "FC 25. 3x3. Ligue de conférence"
   ],
-  "has_advanced_features": true
+  "has_advanced_features": false
 }

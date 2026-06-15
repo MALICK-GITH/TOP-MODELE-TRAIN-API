@@ -2,12 +2,9 @@
   "family": "CLASSIC",
   "description": "Championnats classiques simulés — proche du football réel",
   "has_draw": true,
-  "n_train": 3024,
-  "n_test": 756,
+  "n_train": 3446,
+  "n_test": 862,
   "feature_cols": [
-    "home_team_freq",
-    "away_team_freq",
-    "league_enc",
     "home_w5_played",
     "home_w5_wins",
     "home_w5_draws",
@@ -51,7 +48,10 @@
     "diff_w10_win_rate",
     "diff_w10_gf",
     "diff_w10_ga",
-    "diff_w10_gd"
+    "diff_w10_gd",
+    "home_team_freq",
+    "away_team_freq",
+    "league_enc"
   ],
   "result_classes": [
     "A",
@@ -74,5 +74,5 @@
     "FC 25. Championnat d'Allemagne",
     "World Cup 2026. Simulation"
   ],
-  "has_advanced_features": true
+  "has_advanced_features": false
 }
