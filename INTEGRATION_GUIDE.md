@@ -241,6 +241,9 @@ Prédit le résultat d'un match FIFA virtuel avec des prédictions cohérentes e
 
 **Content-Type :** application/json
 
+**Description :**
+Cette endpoint utilise les modèles de machine learning entraînés et applique automatiquement 5 règles de cohérence pour éviter les contradictions entre les différentes prédictions (1x2, handicap, over/under, score exact, parity).
+
 **Corps de la requête :**
 ```json
 {
@@ -324,6 +327,9 @@ Met à jour l'historique des équipes avec un match terminé (optionnel, pour am
 
 **Content-Type :** application/json
 
+**Description :**
+Cette endpoint permet d'enrichir l'historique des équipes avec les résultats réels des matchs terminés. Ces données sont utilisées pour calculer les features statistiques dans les prédictions futures.
+
 **Corps de la requête :**
 ```json
 {
@@ -370,6 +376,9 @@ Sauvegarde l'historique mis à jour sur disque.
 
 **Méthode :** POST
 
+**Description :**
+Cette endpoint permet de persister les mises à jour de l'historique sur le disque pour qu'elles soient conservées après le redémarrage de l'API.
+
 **Paramètres de requête :**
 - `family` (optionnel) : Si spécifié, sauvegarde seulement cette famille
 
@@ -389,6 +398,31 @@ curl -X POST "https://top-modele-train-api.onrender.com/save-history?family=CLAS
 **Codes de réponse :**
 - `200 OK` : Historique sauvegardé avec succès
 - `500 Internal Server Error` : Erreur lors de la sauvegarde
+
+---
+
+### 7. POST `/clear-cache`
+
+Nettoie le cache des prédictions.
+
+**URL :** `https://top-modele-train-api.onrender.com/clear-cache`
+
+**Méthode :** POST
+
+**Description :**
+Cette endpoint permet de nettoyer le cache des prédictions pour forcer le recalcul après une mise à jour des modèles. Utile lors de déploiements de nouvelles versions.
+
+**Réponse :**
+```json
+{
+  "status": "success",
+  "message": "Cache nettoyé"
+}
+```
+
+**Codes de réponse :**
+- `200 OK` : Cache nettoyé avec succès
+- `503 Service Unavailable` : Cache non disponible
 
 ---
 

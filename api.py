@@ -41,8 +41,8 @@ except ImportError:
 MODELS_DIR = "./models"
 app = FastAPI(
     title="FIFA Virtual Prediction API",
-    description="API de prédiction pour matchs FIFA virtuels",
-    version="1.0.0"
+    description="API de prédiction pour matchs FIFA virtuels avec règles de cohérence globale",
+    version="2.2.0"
 )
 
 # CORS
@@ -153,13 +153,34 @@ async def get_leagues(family: str):
 @app.post("/predict")
 async def predict(request: PredictionRequest):
     """
-    Prédit le résultat d'un match FIFA virtuel.
+    Prédit le résultat d'un match FIFA virtuel avec règles de cohérence globale.
+    
+    Cette endpoint utilise les modèles de machine learning entraînés et applique
+    automatiquement 5 règles de cohérence pour éviter les contradictions entre
+    les différentes prédictions (1x2, handicap, over/under, score exact, parity).
+    
+    Règles de cohérence appliquées:
+      1. Cohérence Over/Under (Monotonie): Si over est favori pour un seuil, 
+         il doit l'être pour tous les seuils inférieurs
+      2. Cohérence Handicap (Monotonie): Si home est favori pour +1, 
+         il doit être encore plus favori pour +2
+      3. Cohérence Score Exact ↔ Total Goals: Le score exact doit correspondre 
+         au total de buts prédit (écart max 2 buts)
+      4. Cohérence Score Exact ↔ 1x2: Le score exact doit refléter le résultat 
+         (home favori → home > away si probabilité > 60%)
+      5. Cohérence Score Exact ↔ Parity: Le score exact doit respecter la 
+         prédiction pair/impair (si probabilité > 60%)
     
     Retourne:
-      - result: prédiction du résultat (H/D/A) avec probabilités
-      - total_goals: prédiction du total de buts
-      - parity: prédiction pair/impair
-      - exact_score: prédiction du score exact
+      - match: Nom du match formaté
+      - league: Nom de la ligue
+      - family: Famille détectée automatiquement (PENALTY, HIGHSCORE, RUSH, CLASSIC)
+      - predictions.1x2: Probabilités pour Home/Draw/Away
+      - predictions.total_goals.predicted: Total de buts prédit
+      - predictions.total_goals.over_under: Probabilités over/under pour seuils dynamiques
+      - predictions.handicap: Probabilités handicap pour seuils dynamiques
+      - predictions.parity: Probabilités pair/impair
+      - predictions.exact_score.prediction: Score exact le plus probable
     """
     if model_loader is None or not model_loader.loaded:
         raise HTTPException(status_code=503, detail="Modèles non chargés")
@@ -177,7 +198,7 @@ async def predict(request: PredictionRequest):
             if cached_result:
                 return cached_result
         
-        # Calculer la prédiction
+        # Calculer la prédiction avec règles de cohérence globales
         prediction = model_loader.predict(
             team_home=request.team_home,
             team_away=request.team_away,
