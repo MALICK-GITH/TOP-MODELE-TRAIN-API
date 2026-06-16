@@ -4,14 +4,14 @@
 
 L'API FIFA Virtual Prediction permet de prédire les résultats de matchs FIFA virtuels en utilisant des modèles de machine learning entraînés sur des données historiques. L'API supporte plusieurs familles de championnats avec des caractéristiques différentes et fournit des prédictions cohérentes et adaptées aux options de paris réelles.
 
-**Version:** 2.2.0  
+**Version:** 2.5.0  
 **Base URL (Production):** `https://top-modele-train-api.onrender.com`  
 **Base URL (Local):** `http://localhost:8000`  
 **Statut:** ✅ Opérationnel en production  
-**Données d'entraînement:** 14,627 matchs historiques  
+**Données d'entraînement:** 15,733 matchs historiques  
 **Familles supportées:** 4 (PENALTY, HIGHSCORE, RUSH, CLASSIC)  
 **Ligues supportées:** 17 ligues FIFA virtuelles  
-**Dernière mise à jour:** 16 Juin 2026 à 6h13 UTC
+**Dernière mise à jour:** 16 Juin 2026 à 16h33 UTC
 
 ---
 
@@ -50,29 +50,29 @@ curl -X POST https://top-modele-train-api.onrender.com/predict \
 ## 📊 Ligues Supportées (17 ligues au total)
 
 ### PENALTY (5 ligues)
-- **FC25. Penalty**: 1,838 matchs
-- **FC24. Penalty**: 1,586 matchs
-- **Penalty**: 2,419 matchs
+- **FC25. Penalty**: 1,850 matchs
+- **FC24. Penalty**: 1,595 matchs
+- **Penalty**: 2,432 matchs
 - **FIFA23. Penalty**: 99 matchs
 - **FC26. Penalty**: 335 matchs
 
 ### HIGHSCORE (2 ligues)
-- **FC 24. 4x4. Championnat d'Angleterre**: 875 matchs
-- **FC 25. 3x3. Ligue de conférence**: 992 matchs
+- **FC 24. 4x4. Championnat d'Angleterre**: 880 matchs
+- **FC 25. 3x3. Ligue de conférence**: 1,000 matchs
 
 ### RUSH (1 ligue)
-- **FC 26. 5x5 Rush. Superligue**: 810 matchs
+- **FC 26. 5x5 Rush. Superligue**: 815 matchs
 
 ### CLASSIC (9 ligues)
-- **FC 25. Champions League**: 502 matchs
-- **FC 26. Champions League**: 502 matchs
-- **FC 25. Championnat d'Angleterre**: 526 matchs
-- **FC 26. Championnat du monde**: 502 matchs
-- **FC 25. Championnat d'Espagne**: 532 matchs
-- **FC 25. Ligue européenne**: 521 matchs
-- **FC 25. Italy Championship**: 519 matchs
-- **FC 25. Championnat d'Allemagne**: 499 matchs
-- **World Cup 2026. Simulation**: 220 matchs
+- **FC 25. Champions League**: 510 matchs
+- **FC 26. Champions League**: 510 matchs
+- **FC 25. Championnat d'Angleterre**: 535 matchs
+- **FC 26. Championnat du monde**: 510 matchs
+- **FC 25. Championnat d'Espagne**: 540 matchs
+- **FC 25. Ligue européenne**: 530 matchs
+- **FC 25. Italy Championship**: 525 matchs
+- **FC 25. Championnat d'Allemagne**: 505 matchs
+- **World Cup 2026. Simulation**: 225 matchs
 
 ---
 
@@ -266,35 +266,183 @@ Cette endpoint utilise les modèles de machine learning entraînés et applique 
   "family": "CLASSIC",
   "predictions": {
     "1x2": {
-      "home": 0.481,
-      "draw": 0.228,
-      "away": 0.291
+      "home": 0.565,
+      "draw": 0.215,
+      "away": 0.22
     },
     "total_goals": {
-      "predicted": 4.7,
+      "predicted": 3.2,
       "over_under": {
-        "3.0": {"over": 0.589, "under": 0.411},
-        "3.5": {"over": 0.564, "under": 0.436},
-        "4.0": {"over": 0.346, "under": 0.654},
-        "4.5": {"over": 0.321, "under": 0.679},
-        "5.0": {"over": 0.153, "under": 0.847},
-        "5.5": {"over": 0.128, "under": 0.872},
-        "6.0": {"over": 0.05, "under": 0.95}
+        "1.5": {"over": 0.95, "under": 0.05},
+        "2.0": {"over": 0.702, "under": 0.298},
+        "2.5": {"over": 0.652, "under": 0.348},
+        "3.0": {"over": 0.6, "under": 0.4},
+        "3.5": {"over": 0.5, "under": 0.5},
+        "4.0": {"over": 0.108, "under": 0.892},
+        "4.5": {"over": 0.058, "under": 0.942}
       }
     },
     "handicap": {
-      "1": {"home": 0.9, "draw": 0.069, "away": 0.031},
-      "2": {"home": 0.969, "draw": 0.024, "away": 0.008},
-      "3": {"home": 0.992, "draw": 0.006, "away": 0.002},
-      "4": {"home": 0.998, "draw": 0.001, "away": 0.0}
+      "-1": {"home": 0.076, "draw": 0.225, "away": 0.699},
+      "1": {"home": 0.833, "draw": 0.157, "away": 0.01},
+      "2": {"home": 0.916, "draw": 0.074, "away": 0.01},
+      "3": {"home": 0.95, "draw": 0.026, "away": 0.024}
     },
     "parity": {
-      "pair": 0.455,
-      "impair": 0.545
+      "pair": 0.445,
+      "impair": 0.555
     },
     "exact_score": {
-      "prediction": "2-0"
+      "prediction": "1-1"
     }
+  },
+  "history": {
+    "home_last_matches": [
+      {
+        "date": "2026-06-16 13:42:00",
+        "opponent": "Bergamo Calcio",
+        "is_home": false,
+        "score_home": 2,
+        "score_away": 0,
+        "team_score": 0,
+        "opponent_score": 2,
+        "result": "L"
+      },
+      {
+        "date": "2026-06-16 10:21:59",
+        "opponent": "Barcelone",
+        "is_home": true,
+        "score_home": 0,
+        "score_away": 1,
+        "team_score": 0,
+        "opponent_score": 1,
+        "result": "L"
+      },
+      {
+        "date": "2026-06-16 06:42:00",
+        "opponent": "Aston Villa",
+        "is_home": false,
+        "score_home": 0,
+        "score_away": 1,
+        "team_score": 1,
+        "opponent_score": 0,
+        "result": "W"
+      },
+      {
+        "date": "2026-06-15 23:43:01",
+        "opponent": "Sporting Clube de Portugal",
+        "is_home": false,
+        "score_home": 1,
+        "score_away": 0,
+        "team_score": 0,
+        "opponent_score": 1,
+        "result": "L"
+      },
+      {
+        "date": "2026-06-15 21:44:01",
+        "opponent": "Liverpool",
+        "is_home": true,
+        "score_home": 2,
+        "score_away": 2,
+        "team_score": 2,
+        "opponent_score": 2,
+        "result": "D"
+      }
+    ],
+    "home_stats": {
+      "avg_goals_for": 0.6,
+      "avg_goals_against": 1.2,
+      "avg_goal_difference": -0.6,
+      "form": "1W-1D-3L",
+      "wins": 1,
+      "draws": 1,
+      "losses": 3,
+      "total_matches": 5,
+      "home_performance": "0W-1D-1L",
+      "away_performance": "1W-0D-2L"
+    },
+    "away_last_matches": [
+      {
+        "date": "2026-06-16 14:02:47",
+        "opponent": "Lombardia",
+        "is_home": false,
+        "score_home": 0,
+        "score_away": 0,
+        "team_score": 0,
+        "opponent_score": 0,
+        "result": "D"
+      },
+      {
+        "date": "2026-06-16 03:41:59",
+        "opponent": "Aston Villa",
+        "is_home": true,
+        "score_home": 1,
+        "score_away": 0,
+        "team_score": 1,
+        "opponent_score": 0,
+        "result": "W"
+      },
+      {
+        "date": "2026-06-16 00:05:48",
+        "opponent": "Benfica",
+        "is_home": false,
+        "score_home": 2,
+        "score_away": 2,
+        "team_score": 2,
+        "opponent_score": 2,
+        "result": "D"
+      },
+      {
+        "date": "2026-06-15 21:23:57",
+        "opponent": "Sporting Clube de Portugal",
+        "is_home": true,
+        "score_home": 0,
+        "score_away": 3,
+        "team_score": 0,
+        "opponent_score": 3,
+        "result": "L"
+      },
+      {
+        "date": "2026-06-15 16:42:50",
+        "opponent": "Bayern Munich",
+        "is_home": true,
+        "score_home": 0,
+        "score_away": 1,
+        "team_score": 0,
+        "opponent_score": 1,
+        "result": "L"
+      }
+    ],
+    "away_stats": {
+      "avg_goals_for": 0.6,
+      "avg_goals_against": 1.2,
+      "avg_goal_difference": -0.6,
+      "form": "1W-2D-2L",
+      "wins": 1,
+      "draws": 2,
+      "losses": 2,
+      "total_matches": 5,
+      "home_performance": "1W-0D-2L",
+      "away_performance": "0W-2D-0L"
+    },
+    "head_to_head": [
+      {
+        "date": "2026-06-13 19:02:59",
+        "home_team": "Arsenal",
+        "away_team": "Lille OSC",
+        "score_home": 0,
+        "score_away": 2,
+        "winner": "A"
+      },
+      {
+        "date": "2026-05-27 20:05:02",
+        "home_team": "Arsenal",
+        "away_team": "Lille OSC",
+        "score_home": 2,
+        "score_away": 2,
+        "winner": "D"
+      }
+    ]
   }
 }
 ```
@@ -305,6 +453,25 @@ Cette endpoint utilise les modèles de machine learning entraînés et applique 
 - `family` : Famille détectée automatiquement
 - `predictions.1x2` : Probabilités pour Home/Draw/Away
 - `predictions.total_goals.predicted` : Total de buts prédit
+- `predictions.total_goals.over_under` : Probabilités Over/Under pour différents seuils
+- `predictions.handicap` : Probabilités pour différents handicaps
+- `predictions.parity` : Probabilités Pair/Impair
+- `predictions.exact_score.prediction` : Score exact prédit
+- `history.home_last_matches` : 5 derniers matchs de l'équipe domicile
+- `history.home_stats` : Statistiques avancées de l'équipe domicile
+- `history.away_last_matches` : 5 derniers matchs de l'équipe extérieur
+- `history.away_stats` : Statistiques avancées de l'équipe extérieur
+- `history.head_to_head` : Confrontations directes entre les deux équipes (si existantes)
+
+**Champs des statistiques avancées :**
+- `avg_goals_for` : Moyenne de buts marqués
+- `avg_goals_against` : Moyenne de buts encaissés
+- `avg_goal_difference` : Différence de buts moyenne
+- `form` : Forme récente (ex: "1W-1D-3L")
+- `wins/draws/losses` : Décompte des victoires/nuls/défaites
+- `total_matches` : Nombre total de matchs analysés
+- `home_performance` : Performance domicile séparée
+- `away_performance` : Performance extérieur séparée
 - `predictions.total_goals.over_under` : Probabilités over/under pour seuils dynamiques (adaptés au total prédit)
 - `predictions.handicap` : Probabilités handicap pour seuils dynamiques (adaptés à la différence prédite)
 - `predictions.parity` : Probabilités pair/impair
@@ -314,6 +481,56 @@ Cette endpoint utilise les modèles de machine learning entraînés et applique 
 - `200 OK` : Prédiction générée avec succès
 - `400 Bad Request` : Paramètres invalides
 - `503 Service Unavailable` : Modèles non chargés
+
+---
+
+## 🆕 Nouvelles Fonctionnalités (v2.3.0 - v2.5.0)
+
+### Historique des Matchs
+
+L'API fournit maintenant un historique détaillé des matchs pour aider à la prise de décision.
+
+**Fonctionnalités :**
+- **home_last_matches** : Les 5 derniers matchs de l'équipe domicile dans la même ligue
+- **away_last_matches** : Les 5 derniers matchs de l'équipe extérieur dans la même ligue
+- **head_to_head** : Confrontations directes entre les deux équipes (uniquement si des matchs en commun existent dans la même ligue)
+
+**Champs des matchs historiques :**
+- `date` : Date et heure du match
+- `opponent` : Nom de l'équipe adverse
+- `is_home` : True si l'équipe jouait à domicile
+- `score_home` : Score de l'équipe domicile
+- `score_away` : Score de l'équipe extérieur
+- `team_score` : Score de l'équipe analysée
+- `opponent_score` : Score de l'équipe adverse
+- `result` : Résultat (W=Victoire, D=Nul, L=Défaite)
+
+### Statistiques Avancées
+
+L'API fournit des statistiques avancées pour chaque équipe basées sur leurs 5 derniers matchs.
+
+**Statistiques disponibles :**
+- **avg_goals_for** : Moyenne de buts marqués par l'équipe
+- **avg_goals_against** : Moyenne de buts encaissés par l'équipe
+- **avg_goal_difference** : Différence de buts moyenne (marqués - encaissés)
+- **form** : Forme récente au format "XW-YD-ZL" (Victoires-Nuls-Défaites)
+- **wins/draws/losses** : Décompte détaillé des résultats
+- **total_matches** : Nombre total de matchs analysés
+- **home_performance** : Performance domicile séparée (ex: "1W-0D-1L")
+- **away_performance** : Performance extérieur séparée (ex: "1W-0D-2L")
+
+**Utilité :**
+- Identifier les équipes en bonne ou mauvaise forme
+- Comparer les performances domicile/extérieur
+- Évaluer la capacité offensive et défensive
+- Prendre des décisions plus informées pour les paris
+
+### Filtrage par Ligue
+
+Toutes les données historiques sont filtrées par ligue pour garantir la pertinence :
+- Seuls les matchs dans la même ligue sont inclus
+- Les confrontations directes ne sont affichées que si les équipes se sont déjà affrontées dans cette ligue spécifique
+- Garantit la cohérence des statistiques avec le contexte du match actuel
 
 ---
 
@@ -957,6 +1174,31 @@ Pour toute question ou problème, contactez l'équipe de développement.
 ---
 
 ## 📝 Changelog
+
+### Version 2.5.0 (16 Juin 2026 à 16h33 UTC)
+- **Réentraînement des modèles**: Dataset actualisé avec 15,733 matchs (+27 matchs)
+- **Mise à jour des statistiques par famille**: 
+  - PENALTY: 7,532 matchs (+12 matchs)
+  - HIGHSCORE: 2,166 matchs (+5 matchs)
+  - RUSH: 927 matchs (+2 matchs)
+  - CLASSIC: 5,108 matchs (+8 matchs)
+- Tests validés: API opérationnelle avec modèles réentraînés
+
+### Version 2.4.0 (16 Juin 2026 à 15h30 UTC)
+- **Statistiques avancées dans l'historique**: Ajout des moyennes de buts marqués/encaissés
+- **Forme récente**: Ajout de la forme au format W-D-L (ex: "1W-1D-3L")
+- **Performance domicile/extérieur**: Séparation des performances domicile et extérieur
+- **Différence de buts**: Ajout de la différence de buts moyenne
+- **Restructuration de la réponse**: Sections stats dédiées pour chaque équipe
+- Tests validés: statistiques fonctionnelles sur toutes les familles
+
+### Version 2.3.0 (16 Juin 2026 à 14h30 UTC)
+- **Historique des matchs**: Ajout des 5 derniers matchs par équipe
+- **Confrontations directes**: Ajout des head-to-head entre équipes
+- **Filtrage par ligue**: Uniquement les matchs dans la même ligue
+- **Chargement CSV**: Intégration du dataset pour l'historique
+- **Correction format de date**: Utilisation du format ISO8601
+- Tests validés: historique fonctionnel avec filtrage par ligue
 
 ### Version 2.2.0 (16 Juin 2026 à 6h13 UTC)
 - **Nouveau système de cohérence globale**: Implémentation de 5 règles de cohérence automatiques
