@@ -3,8 +3,8 @@
     "family": "PENALTY",
     "description": "Séances de tirs au but — 2 issues possibles, scores élevés",
     "has_draw": false,
-    "n_train": 5573,
-    "n_test": 1394,
+    "n_train": 6015,
+    "n_test": 1504,
     "feature_cols": [
       "home_w5_played",
       "home_w5_wins",
@@ -76,8 +76,8 @@
     "family": "HIGHSCORE",
     "description": "Formats 3x3 / 4x4 — scores très élevés (~15 buts/match)",
     "has_draw": true,
-    "n_train": 1628,
-    "n_test": 408,
+    "n_train": 1728,
+    "n_test": 433,
     "feature_cols": [
       "home_w5_played",
       "home_w5_wins",
@@ -147,8 +147,8 @@
     "family": "RUSH",
     "description": "FC 26. 5x5 Rush — profil intermédiaire, grande variance",
     "has_draw": true,
-    "n_train": 700,
-    "n_test": 176,
+    "n_train": 740,
+    "n_test": 185,
     "feature_cols": [
       "home_w5_played",
       "home_w5_wins",
@@ -217,8 +217,8 @@
     "family": "CLASSIC",
     "description": "Championnats classiques simulés — proche du football réel",
     "has_draw": true,
-    "n_train": 3797,
-    "n_test": 950,
+    "n_train": 4080,
+    "n_test": 1020,
     "feature_cols": [
       "home_w5_played",
       "home_w5_wins",

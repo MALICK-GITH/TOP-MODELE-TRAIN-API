@@ -95,7 +95,11 @@ async def startup_event():
     """Charge les modèles au démarrage de l'API."""
     global model_loader, cache_instance
     print("🚀 Démarrage de l'API FIFA Prediction...")
-    model_loader = ModelLoader(MODELS_DIR)
+    
+    # Chemin du fichier CSV pour l'historique des matchs
+    csv_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "finished_matches.csv")
+    
+    model_loader = ModelLoader(MODELS_DIR, csv_path=csv_path)
     model_loader.load_all()
     
     # Initialiser le cache Upstash si disponible

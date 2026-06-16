@@ -648,10 +648,12 @@ class ModelLoader:
     Évite de recharger les modèles à chaque requête.
     """
     
-    def __init__(self, models_dir: str):
+    def __init__(self, models_dir: str, csv_path: str = None):
         self.models_dir = models_dir
         self.loaded = False
         self.models = {}
+        self.csv_data = None
+        self.csv_path = csv_path
     
     def load_all(self):
         """Charge tous les modèles de toutes les familles."""
@@ -685,8 +687,96 @@ class ModelLoader:
             except Exception as e:
                 print(f"  ❌ Erreur chargement {family}: {e}")
         
+        # Charger le CSV pour l'historique des matchs
+        if self.csv_path and os.path.exists(self.csv_path):
+            try:
+                self.csv_data = pd.read_csv(self.csv_path)
+                self.csv_data["finished_at"] = pd.to_datetime(self.csv_data["finished_at"], utc=True, format='ISO8601')
+                print(f"✅ Données CSV chargées: {len(self.csv_data)} matchs")
+            except Exception as e:
+                print(f"⚠️  Erreur chargement CSV: {e}")
+        
         self.loaded = True
         print(f"\n✅ {len(self.models)} familles chargées")
+    
+    def get_team_last_matches(self, team: str, league: str, limit: int = 5) -> list:
+        """
+        Récupère les derniers matchs d'une équipe dans une ligue spécifique.
+        
+        Args:
+            team: Nom de l'équipe
+            league: Nom de la ligue
+            limit: Nombre de matchs à retourner (défaut: 5)
+            
+        Returns:
+            Liste des derniers matchs (dictionnaires)
+        """
+        if self.csv_data is None:
+            return []
+        
+        # Filtrer les matchs où l'équipe a joué (domicile ou extérieur)
+        team_matches = self.csv_data[
+            ((self.csv_data["team_home"] == team) | (self.csv_data["team_away"] == team)) &
+            (self.csv_data["league"] == league)
+        ].sort_values("finished_at", ascending=False).head(limit)
+        
+        # Convertir en liste de dictionnaires
+        matches = []
+        for _, row in team_matches.iterrows():
+            is_home = row["team_home"] == team
+            matches.append({
+                "date": row["finished_at"].strftime("%Y-%m-%d %H:%M:%S"),
+                "opponent": row["team_away"] if is_home else row["team_home"],
+                "is_home": is_home,
+                "score_home": int(row["score_home"]),
+                "score_away": int(row["score_away"]),
+                "team_score": int(row["score_home"]) if is_home else int(row["score_away"]),
+                "opponent_score": int(row["score_away"]) if is_home else int(row["score_home"]),
+                "result": "W" if (is_home and row["score_home"] > row["score_away"]) or 
+                                   (not is_home and row["score_away"] > row["score_home"]) else
+                         "D" if row["score_home"] == row["score_away"] else "L"
+            })
+        
+        return matches
+    
+    def get_head_to_head(self, team_home: str, team_away: str, league: str, limit: int = 5) -> list:
+        """
+        Récupère les confrontations directes entre deux équipes dans une ligue spécifique.
+        
+        Args:
+            team_home: Équipe domicile
+            team_away: Équipe extérieur
+            league: Nom de la ligue
+            limit: Nombre de matchs à retourner (défaut: 5)
+            
+        Returns:
+            Liste des confrontations directes (dictionnaires)
+        """
+        if self.csv_data is None:
+            return []
+        
+        # Filtrer les matchs où les deux équipes se sont affrontées dans cette ligue
+        h2h_matches = self.csv_data[
+            (((self.csv_data["team_home"] == team_home) & (self.csv_data["team_away"] == team_away)) |
+             ((self.csv_data["team_home"] == team_away) & (self.csv_data["team_away"] == team_home))) &
+            (self.csv_data["league"] == league)
+        ].sort_values("finished_at", ascending=False).head(limit)
+        
+        # Convertir en liste de dictionnaires
+        matches = []
+        for _, row in h2h_matches.iterrows():
+            is_home_home = row["team_home"] == team_home
+            matches.append({
+                "date": row["finished_at"].strftime("%Y-%m-%d %H:%M:%S"),
+                "home_team": row["team_home"],
+                "away_team": row["team_away"],
+                "score_home": int(row["score_home"]),
+                "score_away": int(row["score_away"]),
+                "winner": "H" if row["score_home"] > row["score_away"] else 
+                          "A" if row["score_away"] > row["score_home"] else "D"
+            })
+        
+        return matches
     
     def predict(self, team_home: str, team_away: str, league: str) -> dict:
         """
@@ -941,6 +1031,28 @@ class ModelLoader:
         
         # Appliquer les validations de cohérence globales
         output = apply_global_coherence(output, meta)
+        
+        # Ajouter les données historiques si disponibles
+        if self.csv_data is not None:
+            # Récupérer les 5 derniers matchs de chaque équipe
+            home_last_matches = self.get_team_last_matches(team_home, league, limit=5)
+            away_last_matches = self.get_team_last_matches(team_away, league, limit=5)
+            
+            # Récupérer les confrontations directes
+            head_to_head = self.get_head_to_head(team_home, team_away, league, limit=5)
+            
+            # N'ajouter la section head_to_head que s'il y a des matchs en commun
+            if head_to_head:
+                output["history"] = {
+                    "home_last_matches": home_last_matches,
+                    "away_last_matches": away_last_matches,
+                    "head_to_head": head_to_head
+                }
+            else:
+                output["history"] = {
+                    "home_last_matches": home_last_matches,
+                    "away_last_matches": away_last_matches
+                }
         
         return output
     
