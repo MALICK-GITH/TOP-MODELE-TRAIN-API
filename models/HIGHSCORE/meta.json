@@ -2,8 +2,8 @@
   "family": "HIGHSCORE",
   "description": "Formats 3x3 / 4x4 — scores très élevés (~15 buts/match)",
   "has_draw": true,
-  "n_train": 1728,
-  "n_test": 433,
+  "n_train": 1732,
+  "n_test": 434,
   "feature_cols": [
     "home_w5_played",
     "home_w5_wins",
