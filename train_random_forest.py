@@ -699,9 +699,9 @@ class ModelLoader:
         self.loaded = True
         print(f"\n✅ {len(self.models)} familles chargées")
     
-    def get_team_last_matches(self, team: str, league: str, limit: int = 5) -> list:
+    def get_team_last_matches(self, team: str, league: str, limit: int = 5) -> dict:
         """
-        Récupère les derniers matchs d'une équipe dans une ligue spécifique.
+        Récupère les derniers matchs d'une équipe dans une ligue spécifique avec statistiques.
         
         Args:
             team: Nom de l'équipe
@@ -709,10 +709,10 @@ class ModelLoader:
             limit: Nombre de matchs à retourner (défaut: 5)
             
         Returns:
-            Liste des derniers matchs (dictionnaires)
+            Dictionnaire avec les matchs et les statistiques
         """
         if self.csv_data is None:
-            return []
+            return {"matches": [], "stats": {}}
         
         # Filtrer les matchs où l'équipe a joué (domicile ou extérieur)
         team_matches = self.csv_data[
@@ -722,22 +722,71 @@ class ModelLoader:
         
         # Convertir en liste de dictionnaires
         matches = []
+        goals_for = []
+        goals_against = []
+        results = []
+        
         for _, row in team_matches.iterrows():
             is_home = row["team_home"] == team
+            team_score = int(row["score_home"]) if is_home else int(row["score_away"])
+            opponent_score = int(row["score_away"]) if is_home else int(row["score_home"])
+            if (is_home and row["score_home"] > row["score_away"]) or (not is_home and row["score_away"] > row["score_home"]):
+                result = "W"
+            elif row["score_home"] == row["score_away"]:
+                result = "D"
+            else:
+                result = "L"
+            
             matches.append({
                 "date": row["finished_at"].strftime("%Y-%m-%d %H:%M:%S"),
                 "opponent": row["team_away"] if is_home else row["team_home"],
                 "is_home": is_home,
                 "score_home": int(row["score_home"]),
                 "score_away": int(row["score_away"]),
-                "team_score": int(row["score_home"]) if is_home else int(row["score_away"]),
-                "opponent_score": int(row["score_away"]) if is_home else int(row["score_home"]),
-                "result": "W" if (is_home and row["score_home"] > row["score_away"]) or 
-                                   (not is_home and row["score_away"] > row["score_home"]) else
-                         "D" if row["score_home"] == row["score_away"] else "L"
+                "team_score": team_score,
+                "opponent_score": opponent_score,
+                "result": result
             })
+            
+            goals_for.append(team_score)
+            goals_against.append(opponent_score)
+            results.append(result)
         
-        return matches
+        # Calculer les statistiques
+        stats = {}
+        if matches:
+            wins = results.count("W")
+            draws = results.count("D")
+            losses = results.count("L")
+            
+            stats = {
+                "avg_goals_for": round(sum(goals_for) / len(matches), 2),
+                "avg_goals_against": round(sum(goals_against) / len(matches), 2),
+                "avg_goal_difference": round((sum(goals_for) - sum(goals_against)) / len(matches), 2),
+                "form": f"{wins}W-{draws}D-{losses}L",
+                "wins": wins,
+                "draws": draws,
+                "losses": losses,
+                "total_matches": len(matches)
+            }
+            
+            # Performance domicile/extérieur
+            home_matches = [m for m in matches if m["is_home"]]
+            away_matches = [m for m in matches if not m["is_home"]]
+            
+            if home_matches:
+                home_wins = sum(1 for m in home_matches if m["result"] == "W")
+                home_draws = sum(1 for m in home_matches if m["result"] == "D")
+                home_losses = len(home_matches) - home_wins - home_draws
+                stats["home_performance"] = f"{home_wins}W-{home_draws}D-{home_losses}L"
+            
+            if away_matches:
+                away_wins = sum(1 for m in away_matches if m["result"] == "W")
+                away_draws = sum(1 for m in away_matches if m["result"] == "D")
+                away_losses = len(away_matches) - away_wins - away_draws
+                stats["away_performance"] = f"{away_wins}W-{away_draws}D-{away_losses}L"
+        
+        return {"matches": matches, "stats": stats}
     
     def get_head_to_head(self, team_home: str, team_away: str, league: str, limit: int = 5) -> list:
         """
@@ -1034,25 +1083,26 @@ class ModelLoader:
         
         # Ajouter les données historiques si disponibles
         if self.csv_data is not None:
-            # Récupérer les 5 derniers matchs de chaque équipe
-            home_last_matches = self.get_team_last_matches(team_home, league, limit=5)
-            away_last_matches = self.get_team_last_matches(team_away, league, limit=5)
+            # Récupérer les 5 derniers matchs de chaque équipe avec statistiques
+            home_data = self.get_team_last_matches(team_home, league, limit=5)
+            away_data = self.get_team_last_matches(team_away, league, limit=5)
             
             # Récupérer les confrontations directes
             head_to_head = self.get_head_to_head(team_home, team_away, league, limit=5)
             
+            # Construire la réponse avec statistiques
+            history_data = {
+                "home_last_matches": home_data["matches"],
+                "home_stats": home_data["stats"],
+                "away_last_matches": away_data["matches"],
+                "away_stats": away_data["stats"]
+            }
+            
             # N'ajouter la section head_to_head que s'il y a des matchs en commun
             if head_to_head:
-                output["history"] = {
-                    "home_last_matches": home_last_matches,
-                    "away_last_matches": away_last_matches,
-                    "head_to_head": head_to_head
-                }
-            else:
-                output["history"] = {
-                    "home_last_matches": home_last_matches,
-                    "away_last_matches": away_last_matches
-                }
+                history_data["head_to_head"] = head_to_head
+            
+            output["history"] = history_data
         
         return output
     
