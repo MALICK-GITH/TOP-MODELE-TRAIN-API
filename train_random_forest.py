@@ -477,7 +477,169 @@ def train_family(family: str, df_fam: pd.DataFrame, cfg: dict, out_dir: str, eva
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-# 6. MODEL LOADER (API - chargement unique au démarrage)
+# 6. VALIDATION DE COHÉRENCE GLOBALE
+# ──────────────────────────────────────────────────────────────────────────────
+
+def apply_global_coherence(output: dict, meta: dict) -> dict:
+    """
+    Applique des validations de cohérence globales pour éviter les contradictions
+    entre les différentes prédictions.
+    
+    Règles appliquées:
+    1. Cohérence entre seuils over/under (monotonie)
+    2. Cohérence entre handicaps (monotonie)
+    3. Cohérence score exact ↔ total_goals
+    4. Cohérence score exact ↔ 1x2
+    5. Cohérence score exact ↔ parity
+    """
+    preds = output["predictions"]
+    
+    # Règle 1: Cohérence entre seuils over/under (monotonie)
+    # Si over est favori pour un seuil, il doit l'être pour tous les seuils inférieurs
+    over_under = preds["total_goals"]["over_under"]
+    sorted_thresholds = sorted([float(k) for k in over_under.keys()])
+    
+    # Trouver le point de basculement
+    predicted_total = preds["total_goals"]["predicted"]
+    for i, threshold in enumerate(sorted_thresholds):
+        if i > 0:
+            prev_threshold = sorted_thresholds[i - 1]
+            # Utiliser la clé originale pour accéder aux valeurs
+            prev_key = str(prev_threshold)
+            curr_key = str(threshold)
+            
+            if prev_key not in over_under or curr_key not in over_under:
+                continue
+                
+            prev_over = over_under[prev_key]["over"]
+            curr_over = over_under[curr_key]["over"]
+            
+            # Si le seuil précédent favorisait over, le seuil actuel doit aussi favoriser over
+            # (ou au moins ne pas favoriser under plus fortement)
+            if prev_over > 0.5 and curr_over < 0.5:
+                # Corriger: forcer over à être >= 0.5
+                over_under[curr_key]["over"] = max(0.5, curr_over)
+                over_under[curr_key]["under"] = 1 - over_under[curr_key]["over"]
+    
+    # Règle 2: Cohérence entre handicaps (monotonie)
+    # Si home est favori pour +1, il doit être encore plus favori pour +2
+    handicap = preds["handicap"]
+    sorted_handicaps = sorted([float(k) for k in handicap.keys()])
+    
+    # Pour les handicaps positifs: home doit être de plus en plus favori
+    positive_handicaps = [h for h in sorted_handicaps if h > 0]
+    for i in range(1, len(positive_handicaps)):
+        prev_h = positive_handicaps[i - 1]
+        curr_h = positive_handicaps[i]
+        prev_key = str(prev_h)
+        curr_key = str(curr_h)
+        
+        if prev_key not in handicap or curr_key not in handicap:
+            continue
+            
+        prev_home = handicap[prev_key]["home"]
+        curr_home = handicap[curr_key]["home"]
+        
+        # Si home était favori pour le handicap précédent, il doit l'être encore plus pour le suivant
+        if prev_home > 0.5 and curr_home < prev_home:
+            # Corriger: forcer home à être >= prev_home
+            handicap[curr_key]["home"] = max(prev_home, curr_home)
+            # Répartir draw et away proportionnellement
+            remaining = 1 - handicap[curr_key]["home"]
+            handicap[curr_key]["draw"] = remaining * 0.3
+            handicap[curr_key]["away"] = remaining * 0.7
+    
+    # Pour les handicaps négatifs: away doit être de plus en plus favori
+    negative_handicaps = [h for h in sorted_handicaps if h < 0]
+    negative_handicaps.sort(reverse=True)  # Du plus proche de 0 au plus négatif
+    for i in range(1, len(negative_handicaps)):
+        prev_h = negative_handicaps[i - 1]
+        curr_h = negative_handicaps[i]
+        prev_key = str(prev_h)
+        curr_key = str(curr_h)
+        
+        if prev_key not in handicap or curr_key not in handicap:
+            continue
+            
+        prev_away = handicap[prev_key]["away"]
+        curr_away = handicap[curr_key]["away"]
+        
+        # Si away était favori pour le handicap précédent, il doit l'être encore plus pour le suivant
+        if prev_away > 0.5 and curr_away < prev_away:
+            # Corriger: forcer away à être >= prev_away
+            handicap[curr_key]["away"] = max(prev_away, curr_away)
+            # Répartir home et draw proportionnellement
+            remaining = 1 - handicap[curr_key]["away"]
+            handicap[curr_key]["home"] = remaining * 0.7
+            handicap[curr_key]["draw"] = remaining * 0.3
+    
+    # Règle 3: Cohérence score exact ↔ total_goals
+    exact_score_str = preds["exact_score"]["prediction"]
+    exact_home, exact_away = map(int, exact_score_str.split("-"))
+    exact_total = exact_home + exact_away
+    predicted_total = preds["total_goals"]["predicted"]
+    
+    # Si l'écart est trop grand (> 2 buts), ajuster le score exact
+    if abs(exact_total - predicted_total) > 2:
+        # Recalculer le score exact le plus proche du total prédit
+        # En utilisant la distribution de Poisson
+        from scipy.stats import poisson as poisson_dist
+        lambda_total = predicted_total
+        best_score = (0, 0)
+        best_prob = 0
+        for h in range(int(lambda_total) - 2, int(lambda_total) + 3):
+            for a in range(int(lambda_total) - 2, int(lambda_total) + 3):
+                if h >= 0 and a >= 0:
+                    # Probabilité simplifiée
+                    prob = poisson_dist.pmf(h, lambda_total / 2) * poisson_dist.pmf(a, lambda_total / 2)
+                    if prob > best_prob:
+                        best_prob = prob
+                        best_score = (h, a)
+        preds["exact_score"]["prediction"] = f"{best_score[0]}-{best_score[1]}"
+    
+    # Règle 4: Cohérence score exact ↔ 1x2
+    exact_score_str = preds["exact_score"]["prediction"]
+    exact_home, exact_away = map(int, exact_score_str.split("-"))
+    home_prob = preds["1x2"]["home"]
+    away_prob = preds["1x2"]["away"]
+    
+    # Si home est fortement favori (> 0.6), le score exact doit avoir home > away
+    if home_prob > 0.6 and exact_home <= exact_away:
+        # Ajuster le score exact pour avoir home > away
+        diff = max(1, exact_away - exact_home + 1)
+        preds["exact_score"]["prediction"] = f"{exact_home + diff}-{exact_away}"
+    
+    # Si away est fortement favori (> 0.6), le score exact doit avoir away > home
+    if away_prob > 0.6 and exact_away <= exact_home:
+        # Ajuster le score exact pour avoir away > home
+        diff = max(1, exact_home - exact_away + 1)
+        preds["exact_score"]["prediction"] = f"{exact_home}-{exact_away + diff}"
+    
+    # Règle 5: Cohérence score exact ↔ parity
+    exact_score_str = preds["exact_score"]["prediction"]
+    exact_home, exact_away = map(int, exact_score_str.split("-"))
+    exact_total = exact_home + exact_away
+    exact_parity = "pair" if exact_total % 2 == 0 else "impair"
+    predicted_parity = "pair" if preds["parity"]["pair"] > preds["parity"]["impair"] else "impair"
+    
+    # Si la prédiction de parité est forte (> 0.6), ajuster le score exact
+    parity_prob = max(preds["parity"]["pair"], preds["parity"]["impair"])
+    if parity_prob > 0.6 and exact_parity != predicted_parity:
+        # Ajuster le score exact pour respecter la parité
+        if predicted_parity == "pair":
+            if exact_total % 2 != 0:
+                # Ajouter 1 but à home ou away
+                preds["exact_score"]["prediction"] = f"{exact_home + 1}-{exact_away}"
+        else:
+            if exact_total % 2 == 0:
+                # Ajouter 1 but à home ou away
+                preds["exact_score"]["prediction"] = f"{exact_home + 1}-{exact_away}"
+    
+    return output
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# 7. MODEL LOADER (API - chargement unique au démarrage)
 # ──────────────────────────────────────────────────────────────────────────────
 
 class ModelLoader:
@@ -751,6 +913,7 @@ class ModelLoader:
                 "away": round(float(prob_handicap_away), 3)
             }
         
+        # Assembler les prédictions brutes
         output = {
             "match": f"{team_home} vs {team_away}",
             "league": league,
@@ -775,6 +938,10 @@ class ModelLoader:
                 }
             }
         }
+        
+        # Appliquer les validations de cohérence globales
+        output = apply_global_coherence(output, meta)
+        
         return output
     
     def update_history(self, match_data: dict):

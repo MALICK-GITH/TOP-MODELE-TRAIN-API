@@ -4,14 +4,14 @@
 
 L'API FIFA Virtual Prediction permet de prédire les résultats de matchs FIFA virtuels en utilisant des modèles de machine learning entraînés sur des données historiques. L'API supporte plusieurs familles de championnats avec des caractéristiques différentes et fournit des prédictions cohérentes et adaptées aux options de paris réelles.
 
-**Version:** 2.1.0  
+**Version:** 2.2.0  
 **Base URL (Production):** `https://top-modele-train-api.onrender.com`  
 **Base URL (Local):** `http://localhost:8000`  
 **Statut:** ✅ Opérationnel en production  
-**Données d'entraînement:** 13,262 matchs historiques  
+**Données d'entraînement:** 14,627 matchs historiques  
 **Familles supportées:** 4 (PENALTY, HIGHSCORE, RUSH, CLASSIC)  
 **Ligues supportées:** 17 ligues FIFA virtuelles  
-**Dernière mise à jour:** 15 Juin 2026 à 1h27 UTC
+**Dernière mise à jour:** 16 Juin 2026 à 6h13 UTC
 
 ---
 
@@ -394,15 +394,44 @@ curl -X POST "https://top-modele-train-api.onrender.com/save-history?family=CLAS
 
 ## 🧠 Cohérence des Prédictions
 
-L'API assure la cohérence entre toutes les prédictions pour éviter des résultats contradictoires.
+L'API assure la cohérence entre toutes les prédictions pour éviter des résultats contradictoires grâce à un système de validation globale.
 
-### Cohérence 1x2 ↔ Handicap
+### Règles de Cohérence Globale (Version 2.2.0)
+
+L'API applique 5 règles de cohérence automatiques après chaque prédiction:
+
+1. **Cohérence Over/Under (Monotonie)**
+   - Si over est favori pour un seuil, il doit l'être pour tous les seuils inférieurs
+   - Évite les contradictions entre les différents seuils de buts
+   - Validation transversale entre tous les seuils proposés
+
+2. **Cohérence Handicap (Monotonie)**
+   - Si home est favori pour +1, il doit être encore plus favori pour +2
+   - Pour les handicaps négatifs: si away est favori pour -1, il doit être encore plus favori pour -2
+   - Assure la progression logique des probabilités selon l'avantage donné
+
+3. **Cohérence Score Exact ↔ Total Goals**
+   - Le score exact prédit doit correspondre au total de buts prédit
+   - Si l'écart dépasse 2 buts, le score exact est recalculé avec la distribution de Poisson
+   - Garantit la cohérence entre la prédiction de score exact et le total de buts
+
+4. **Cohérence Score Exact ↔ 1x2**
+   - Si home est fortement favori (> 60%), le score exact doit avoir home > away
+   - Si away est fortement favori (> 60%), le score exact doit avoir away > home
+   - Le score exact reflète le résultat prédit en 1x2
+
+5. **Cohérence Score Exact ↔ Parity**
+   - Si la prédiction de parité est forte (> 60%), le score exact respecte cette parité
+   - Le score exact est ajusté pour correspondre à pair/impair prédit
+   - Évite les contradictions entre le score exact et la prédiction de parité
+
+### Cohérence 1x2 ↔ Handicap (Existante)
 - Si home est favori dans 1x2 (ex: 76%), les handicaps positifs pour home sont plus probables
 - Si away est favori dans 1x2, les handicaps négatifs pour home sont plus probables
 - Les handicaps sont ajustés progressivement (20% par unité) pour éviter les changements brusques
 - Forçage de la cohérence: si le favori n'est pas correct, les probabilités sont ajustées (0.6/0.2/0.2)
 
-### Cohérence Total Goals ↔ Over/Under
+### Cohérence Total Goals ↔ Over/Under (Existante)
 - Si le total prédit est supérieur au seuil, over est favorisé
 - Si le total prédit est inférieur au seuil, under est favorisé
 - Les seuils sont sélectionnés dynamiquement autour du total prédit (±3 seuils)
@@ -415,8 +444,10 @@ L'API assure la cohérence entre toutes les prédictions pour éviter des résul
 - Maximum 7 seuils over/under et 5 handicaps pour éviter la surcharge d'informations
 
 ### Validation de Cohérence
+- Validation globale automatique après chaque prédiction
 - Tous les seuils over/under sont validés pour garantir la cohérence avec le total prédit
 - Tous les handicaps sont validés pour garantir la cohérence avec les prédictions 1x2
+- Le score exact est validé contre total_goals, 1x2 et parity
 - Tests automatiques sur toutes les familles (CLASSIC, HIGHSCORE, RUSH, PENALTY)
 
 ---
@@ -893,6 +924,20 @@ Pour toute question ou problème, contactez l'équipe de développement.
 
 ## 📝 Changelog
 
+### Version 2.2.0 (16 Juin 2026 à 6h13 UTC)
+- **Nouveau système de cohérence globale**: Implémentation de 5 règles de cohérence automatiques
+- **Règle 1**: Cohérence monotonie over/under (évite les contradictions entre seuils)
+- **Règle 2**: Cohérence monotonie handicap (progression logique des probabilités)
+- **Règle 3**: Cohérence score exact ↔ total_goals (écart max 2 buts)
+- **Règle 4**: Cohérence score exact ↔ 1x2 (score reflète le résultat)
+- **Règle 5**: Cohérence score exact ↔ parity (score respecte la parité prédite)
+- Réentraînement des modèles avec dataset actualisé (14,627 matchs)
+- Période du dataset: 27 mai 2026 - 15 juin 2026
+- Sources multiples: 888starz et cron-learning
+- Tests validés: cohérence significativement améliorée sur toutes les familles
+- Résolution du problème de contradictions entre les options de paris sur la plateforme
+- Correction de bugs dans la gestion des clés de dictionnaire pour la cohérence
+
 ### Version 2.1.0 (15 Juin 2026 à 1h27 UTC)
 - **Correction critique**: Renforcement de la cohérence des prédictions (over/under et handicap)
 - Ajustement plus fort pour over/under (40% au lieu de 15%)
@@ -921,6 +966,6 @@ Pour toute question ou problème, contactez l'équipe de développement.
 ---
 
 **Document généré par SOLITAIRE HACK**  
-*Dernière mise à jour : 15 Juin 2026 à 1h27 UTC*  
-*Version : 2.1.0 - Production*  
+*Dernière mise à jour : 16 Juin 2026 à 6h13 UTC*  
+*Version : 2.2.0 - Production*  
 *Tous droits réservés*

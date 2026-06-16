@@ -2,8 +2,8 @@
   "family": "CLASSIC",
   "description": "Championnats classiques simulés — proche du football réel",
   "has_draw": true,
-  "n_train": 3446,
-  "n_test": 862,
+  "n_train": 3797,
+  "n_test": 950,
   "feature_cols": [
     "home_w5_played",
     "home_w5_wins",
