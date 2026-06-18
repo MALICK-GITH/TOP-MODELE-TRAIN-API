@@ -597,43 +597,9 @@ def apply_global_coherence(output: dict, meta: dict) -> dict:
                         best_score = (h, a)
         preds["exact_score"]["prediction"] = f"{best_score[0]}-{best_score[1]}"
     
-    # Règle 4: Cohérence score exact ↔ 1x2
-    exact_score_str = preds["exact_score"]["prediction"]
-    exact_home, exact_away = map(int, exact_score_str.split("-"))
-    home_prob = preds["1x2"]["home"]
-    away_prob = preds["1x2"]["away"]
-    
-    # Si home est fortement favori (> 0.6), le score exact doit avoir home > away
-    if home_prob > 0.6 and exact_home <= exact_away:
-        # Ajuster le score exact pour avoir home > away
-        diff = max(1, exact_away - exact_home + 1)
-        preds["exact_score"]["prediction"] = f"{exact_home + diff}-{exact_away}"
-    
-    # Si away est fortement favori (> 0.6), le score exact doit avoir away > home
-    if away_prob > 0.6 and exact_away <= exact_home:
-        # Ajuster le score exact pour avoir away > home
-        diff = max(1, exact_home - exact_away + 1)
-        preds["exact_score"]["prediction"] = f"{exact_home}-{exact_away + diff}"
-    
-    # Règle 5: Cohérence score exact ↔ parity
-    exact_score_str = preds["exact_score"]["prediction"]
-    exact_home, exact_away = map(int, exact_score_str.split("-"))
-    exact_total = exact_home + exact_away
-    exact_parity = "pair" if exact_total % 2 == 0 else "impair"
-    predicted_parity = "pair" if preds["parity"]["pair"] > preds["parity"]["impair"] else "impair"
-    
-    # Si la prédiction de parité est forte (> 0.6), ajuster le score exact
-    parity_prob = max(preds["parity"]["pair"], preds["parity"]["impair"])
-    if parity_prob > 0.6 and exact_parity != predicted_parity:
-        # Ajuster le score exact pour respecter la parité
-        if predicted_parity == "pair":
-            if exact_total % 2 != 0:
-                # Ajouter 1 but à home ou away
-                preds["exact_score"]["prediction"] = f"{exact_home + 1}-{exact_away}"
-        else:
-            if exact_total % 2 == 0:
-                # Ajouter 1 but à home ou away
-                preds["exact_score"]["prediction"] = f"{exact_home + 1}-{exact_away}"
+    # NOTE: Les règles 4 et 5 (cohérence score exact ↔ 1x2 et score exact ↔ parity) 
+    # ont été retirées car maintenant le 1X2 et la parité sont dérivés du score exact,
+    # et non l'inverse. Cela garantit une cohérence parfaite.
     
     return output
 
@@ -1078,7 +1044,45 @@ class ModelLoader:
             }
         }
         
-        # Appliquer les validations de cohérence globales
+        # Dériver le 1X2 et la parité du score exact pour garantir la cohérence
+        exact_score_str = output["predictions"]["exact_score"]["prediction"]
+        exact_home, exact_away = map(int, exact_score_str.split("-"))
+        
+        # Dériver le 1X2 du score exact
+        if exact_home > exact_away:
+            derived_1x2 = "1"
+        elif exact_home == exact_away:
+            derived_1x2 = "X"
+        else:
+            derived_1x2 = "2"
+        
+        # Dériver la parité du score exact
+        exact_total = exact_home + exact_away
+        derived_parity = "pair" if exact_total % 2 == 0 else "impair"
+        
+        # Ajuster les probabilités 1X2 pour refléter le résultat dérivé
+        if derived_1x2 == "1":
+            output["predictions"]["1x2"]["home"] = max(output["predictions"]["1x2"]["home"], 0.6)
+            output["predictions"]["1x2"]["draw"] = min(output["predictions"]["1x2"]["draw"], 0.2)
+            output["predictions"]["1x2"]["away"] = min(output["predictions"]["1x2"]["away"], 0.2)
+        elif derived_1x2 == "X":
+            output["predictions"]["1x2"]["draw"] = max(output["predictions"]["1x2"]["draw"], 0.5)
+            output["predictions"]["1x2"]["home"] = min(output["predictions"]["1x2"]["home"], 0.3)
+            output["predictions"]["1x2"]["away"] = min(output["predictions"]["1x2"]["away"], 0.3)
+        else:  # derived_1x2 == "2"
+            output["predictions"]["1x2"]["away"] = max(output["predictions"]["1x2"]["away"], 0.6)
+            output["predictions"]["1x2"]["draw"] = min(output["predictions"]["1x2"]["draw"], 0.2)
+            output["predictions"]["1x2"]["home"] = min(output["predictions"]["1x2"]["home"], 0.2)
+        
+        # Ajuster les probabilités de parité pour refléter la parité dérivée
+        if derived_parity == "pair":
+            output["predictions"]["parity"]["pair"] = max(output["predictions"]["parity"]["pair"], 0.6)
+            output["predictions"]["parity"]["impair"] = min(output["predictions"]["parity"]["impair"], 0.4)
+        else:
+            output["predictions"]["parity"]["impair"] = max(output["predictions"]["parity"]["impair"], 0.6)
+            output["predictions"]["parity"]["pair"] = min(output["predictions"]["parity"]["pair"], 0.4)
+        
+        # Appliquer les validations de cohérence globales restantes
         output = apply_global_coherence(output, meta)
         
         # Ajouter les données historiques si disponibles
