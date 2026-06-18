@@ -2,8 +2,8 @@
   "family": "PENALTY",
   "description": "Séances de tirs au but — 2 issues possibles, scores élevés",
   "has_draw": false,
-  "n_train": 6024,
-  "n_test": 1507,
+  "n_train": 6727,
+  "n_test": 1682,
   "feature_cols": [
     "home_w5_played",
     "home_w5_wins",
