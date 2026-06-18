@@ -15,15 +15,19 @@ L'API FIFA Virtual Prediction permet de prédire les résultats de matchs FIFA v
 
 ---
 
-## � Guides d'Intégration Spécifiques
+## 📚 Guide d'Intégration Complet
 
-Pour une intégration plus détaillée selon votre plateforme, consultez nos guides spécialisés:
+Pour une intégration détaillée de l'API FIFA Virtual Prediction dans vos applications (mobile, web et backend), consultez notre guide d'intégration complet:
 
-- **[📱 Guide d'Intégration Mobile](INTEGRATION_MOBILE.md)** - iOS (Swift), Android (Kotlin), React Native, Flutter
-- **[🌐 Guide d'Intégration Web](INTEGRATION_WEB.md)** - JavaScript Vanilla, React, Vue.js, Angular
-- **[🔧 Guide d'Intégration Backend](INTEGRATION_BACKEND.md)** - Node.js, Python, PHP, Java, Go
+- **[📖 Guide d'Intégration Complet](INTEGRATION_COMPLETE.md)** - Tous les exemples de code et bonnes pratiques pour:
+  - **Mobile:** iOS (Swift), Android (Kotlin), React Native, Flutter
+  - **Web:** JavaScript Vanilla, React, Vue.js, Angular
+  - **Backend:** Node.js, Python, PHP, Java, Go
 
-Ces guides contiennent des exemples de code complets, des bonnes pratiques et des instructions détaillées pour chaque plateforme.
+Ce guide contient des exemples de code complets, des bonnes pratiques et des instructions détaillées pour chaque plateforme, le tout dans un seul fichier pour faciliter l'intégration.
+
+---
+
 
 ---
 
