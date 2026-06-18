@@ -7,4 +7,4 @@ services:
     envVars:
       - key: PORT
         value: 8000
-    # Force redeploy with updated models
+    # Force redeploy with updated models and history data - v2.7.0
