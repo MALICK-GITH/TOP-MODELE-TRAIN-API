@@ -5,7 +5,7 @@
 L'API FIFA Virtual Prediction permet de prédire les résultats de matchs FIFA virtuels en utilisant des modèles de machine learning entraînés sur des données historiques. L'API supporte plusieurs familles de championnats avec des caractéristiques différentes et fournit des prédictions cohérentes et adaptées aux options de paris réelles.
 
 **Version:** 2.5.0  
-**Base URL (Production):** `https://top-modele-train-api.onrender.com`  
+**Base URL (Production):** `https://top-modele-train-api-vmp.onrender.com`  
 **Base URL (Local):** `http://localhost:8000`  
 **Statut:** ✅ Opérationnel en production  
 **Données d'entraînement:** 15,733 matchs historiques  
