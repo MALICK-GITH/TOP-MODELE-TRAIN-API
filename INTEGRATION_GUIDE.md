@@ -4,18 +4,30 @@
 
 L'API FIFA Virtual Prediction permet de prédire les résultats de matchs FIFA virtuels en utilisant des modèles de machine learning entraînés sur des données historiques. L'API supporte plusieurs familles de championnats avec des caractéristiques différentes et fournit des prédictions cohérentes et adaptées aux options de paris réelles.
 
-**Version:** 2.5.0  
+**Version:** 2.7.0  
 **Base URL (Production):** `https://top-modele-train-api-vmp.onrender.com`  
 **Base URL (Local):** `http://localhost:8000`  
 **Statut:** ✅ Opérationnel en production  
-**Données d'entraînement:** 15,733 matchs historiques  
+**Données d'entraînement:** 17,663 matchs historiques  
 **Familles supportées:** 4 (PENALTY, HIGHSCORE, RUSH, CLASSIC)  
 **Ligues supportées:** 17 ligues FIFA virtuelles  
-**Dernière mise à jour:** 16 Juin 2026 à 16h33 UTC
+**Dernière mise à jour:** 18 Juin 2026 à 01h30 UTC
 
 ---
 
-## 🚀 Démarrage Rapide
+## � Guides d'Intégration Spécifiques
+
+Pour une intégration plus détaillée selon votre plateforme, consultez nos guides spécialisés:
+
+- **[📱 Guide d'Intégration Mobile](INTEGRATION_MOBILE.md)** - iOS (Swift), Android (Kotlin), React Native, Flutter
+- **[🌐 Guide d'Intégration Web](INTEGRATION_WEB.md)** - JavaScript Vanilla, React, Vue.js, Angular
+- **[🔧 Guide d'Intégration Backend](INTEGRATION_BACKEND.md)** - Node.js, Python, PHP, Java, Go
+
+Ces guides contiennent des exemples de code complets, des bonnes pratiques et des instructions détaillées pour chaque plateforme.
+
+---
+
+## � Démarrage Rapide
 
 ### 1. Test de l'API en production
 
@@ -50,29 +62,29 @@ curl -X POST https://top-modele-train-api.onrender.com/predict \
 ## 📊 Ligues Supportées (17 ligues au total)
 
 ### PENALTY (5 ligues)
-- **FC25. Penalty**: 1,850 matchs
-- **FC24. Penalty**: 1,595 matchs
-- **Penalty**: 2,432 matchs
-- **FIFA23. Penalty**: 99 matchs
-- **FC26. Penalty**: 335 matchs
+- **FC25. Penalty**: 2,728 matchs
+- **FC24. Penalty**: 2,473 matchs
+- **Penalty**: 3,310 matchs
+- **FIFA23. Penalty**: 977 matchs
+- **FC26. Penalty**: 1,622 matchs
 
 ### HIGHSCORE (2 ligues)
-- **FC 24. 4x4. Championnat d'Angleterre**: 880 matchs
-- **FC 25. 3x3. Ligue de conférence**: 1,000 matchs
+- **FC 24. 4x4. Championnat d'Angleterre**: 1,758 matchs
+- **FC 25. 3x3. Ligue de conférence**: 1,880 matchs
 
 ### RUSH (1 ligue)
-- **FC 26. 5x5 Rush. Superligue**: 815 matchs
+- **FC 26. 5x5 Rush. Superligue**: 1,630 matchs
 
 ### CLASSIC (9 ligues)
-- **FC 25. Champions League**: 510 matchs
-- **FC 26. Champions League**: 510 matchs
-- **FC 25. Championnat d'Angleterre**: 535 matchs
-- **FC 26. Championnat du monde**: 510 matchs
-- **FC 25. Championnat d'Espagne**: 540 matchs
-- **FC 25. Ligue européenne**: 530 matchs
-- **FC 25. Italy Championship**: 525 matchs
-- **FC 25. Championnat d'Allemagne**: 505 matchs
-- **World Cup 2026. Simulation**: 225 matchs
+- **FC 25. Champions League**: 1,020 matchs
+- **FC 26. Champions League**: 1,020 matchs
+- **FC 25. Championnat d'Angleterre**: 1,070 matchs
+- **FC 26. Championnat du monde**: 1,020 matchs
+- **FC 25. Championnat d'Espagne**: 1,080 matchs
+- **FC 25. Ligue européenne**: 1,060 matchs
+- **FC 25. Italy Championship**: 1,050 matchs
+- **FC 25. Championnat d'Allemagne**: 1,010 matchs
+- **World Cup 2026. Simulation**: 450 matchs
 
 ---
 
@@ -1174,6 +1186,31 @@ Pour toute question ou problème, contactez l'équipe de développement.
 ---
 
 ## 📝 Changelog
+
+### Version 2.7.0 (18 Juin 2026 à 01h30 UTC)
+- **Réentraînement des modèles**: Dataset actualisé avec 17,663 matchs (+1,930 matchs)
+- **Mise à jour des statistiques par famille**:
+  - PENALTY: 8,410 matchs (+878 matchs)
+  - HIGHSCORE: 2,418 matchs (+252 matchs)
+  - RUSH: 1,037 matchs (+110 matchs)
+  - CLASSIC: 5,798 matchs (+690 matchs)
+- **Guides d'intégration spécialisés**: Ajout de guides détaillés pour mobile, web et backend
+  - INTEGRATION_MOBILE.md: iOS (Swift), Android (Kotlin), React Native, Flutter
+  - INTEGRATION_WEB.md: JavaScript Vanilla, React, Vue.js, Angular
+  - INTEGRATION_BACKEND.md: Node.js, Python, PHP, Java, Go
+- **Exemples de code complets**: Implémentations prêtes à l'emploi pour chaque plateforme
+- **Bonnes pratiques**: Guidelines pour performance, sécurité et UX
+- **Règles de cohérence conservées**: Dérivation 1X2/parité du score exact
+- Tests validés: API opérationnelle avec modèles réentraînés et guides d'intégration
+
+### Version 2.6.0 (18 Juin 2026 à 00h30 UTC)
+- **Correction de l'incohérence 1X2/parité/score exact**
+- **Dérivation du 1X2 à partir du score exact**: home>away→"1", home==away→"X", home<away→"2"
+- **Dérivation de la parité à partir du score exact**: (home+away)%2==0→"pair", sinon→"impair"
+- **Retrait des règles inutiles**: Suppression des règles 4 et 5 dans apply_global_coherence
+- **Test de cohérence automatique**: Script test_coherence.py pour vérifier l'alignement
+- Tests validés: 0 incohérences détectées sur 20 prédictions
+- Résolution des contradictions entre prédictions (ex: score 14-14 mais 1X2 affichait "victoire extérieur")
 
 ### Version 2.5.0 (16 Juin 2026 à 16h33 UTC)
 - **Réentraînement des modèles**: Dataset actualisé avec 15,733 matchs (+27 matchs)
