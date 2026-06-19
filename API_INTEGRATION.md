@@ -2,7 +2,7 @@
 
 **Production URL:** `https://top-modele-train-api-vmp.onrender.com`
 
-**Version:** 3.0.0  
+**Version:** 4.0.0  
 **Last Updated:** 2026-06-19
 
 ---
@@ -44,7 +44,7 @@ GET /health
 ---
 
 ### 2. Predict Match
-Get prediction for a FIFA match with dynamic Poisson system and platform-specific option mapping.
+Get prediction for a FIFA match with platform-specific option mapping (exact score removed).
 
 ```http
 POST /predict
@@ -73,13 +73,13 @@ Content-Type: application/json
       "away": 0.547
     },
     "total_goals": {
-      "predicted": 8.6,
-      "platform_value": 8.5,
+      "predicted": 7.5,
+      "platform_value": 7.5,
       "platform_name": "Total Goals"
     },
     "handicap": {
-      "predicted": -2.0,
-      "platform_value": -2.0,
+      "predicted": 0.0,
+      "platform_value": 0.0,
       "platform_name": "Handicap"
     },
     "over_under": {
@@ -93,25 +93,16 @@ Content-Type: application/json
     "parity": {
       "pair": 0.481,
       "impair": 0.519
-    },
-    "exact_score": {
-      "prediction": "3-5"
     }
-  },
-  "meta": {
-    "lambda_home": 3.32,
-    "lambda_away": 5.29
   }
 }
 ```
 
-**Key Changes from v2.2.0:**
-- ❌ Removed `history` section (team historical data)
-- ✅ Added `platform_value` and `platform_name` for total_goals and handicap
-- ✅ Added `meta` section with Poisson lambda values
-- ✅ Simplified `over_under` (single under/over instead of multiple thresholds)
-- ✅ Simplified `handicap` (single predicted value instead of multiple thresholds)
-- ✅ Dynamic Poisson system for varied exact score predictions
+**Key Changes from v3.0.0:**
+- ❌ Removed `exact_score` field (no longer predicted)
+- ❌ Removed `meta` section (lambda values no longer used)
+- ✅ Total Goals and Handicap use family-specific default values
+- ✅ Predictions are now based solely on 1X2, Over/Under, BTTS, and Parity models
 
 ---
 
@@ -324,31 +315,25 @@ The API maps continuous model predictions to discrete platform-specific options 
 
 ---
 
-## 🔒 Dynamic Poisson System
+## 🔒 Prediction Models
 
 ### Overview
-The API uses a dynamic Poisson system for exact score prediction, replacing the fixed lambda system from v2.2.0.
+The API uses machine learning models for prediction without exact score calculation.
 
-### How It Works
-1. **Regression Models**: Uses GradientBoostingRegressor models to predict lambda_home and lambda_away based on historical team features
-2. **Varied Predictions**: Produces varied exact scores instead of uniform predictions (e.g., no more systematic 1-1 for all matches)
-3. **Team Strength**: Preserves relative team strength through dynamic lambda calculation
+### Available Models
+1. **1X2 (Result)**: GradientBoostingClassifier - predicts Home/Draw/Away
+2. **Over/Under**: GradientBoostingClassifier - predicts Over/Under based on family-specific thresholds
+3. **BTTS (Both Teams To Score)**: RandomForestClassifier - predicts Yes/No
+4. **Parity (Odd/Even)**: RandomForestClassifier - predicts Pair/Impair
 
-### Lambda Values
-- **lambda_home**: Expected goals for home team (predicted by regression model)
-- **lambda_away**: Expected goals for away team (predicted by regression model)
-- **Available in**: Response under `meta.lambda_home` and `meta.lambda_away`
+### Total Goals and Handicap
+Total Goals and Handicap use family-specific default values:
+- **PENALTY**: total_goals=6.5, handicap=0.0
+- **HIGHSCORE**: total_goals=15.0, handicap=0.0
+- **RUSH**: total_goals=7.5, handicap=0.0
+- **CLASSIC**: total_goals=3.1, handicap=0.0
 
-### Exact Score Calculation
-The exact score is calculated using the Poisson distribution with the predicted lambda values:
-```python
-from scipy.stats import poisson
-
-# Calculate probability for each possible score
-prob = poisson.pmf(home_goals, lambda_home) * poisson.pmf(away_goals, lambda_away)
-
-# Return the score with highest probability
-```
+These values are then mapped to platform-specific options using the platform options mapping.
 
 ---
 
@@ -372,11 +357,10 @@ prediction = response.json()
 # Access prediction data
 print(f"Match: {prediction['match']}")
 print(f"Family: {prediction['family']}")
-print(f"Exact Score: {prediction['predictions']['exact_score']['prediction']}")
 print(f"Total Goals: {prediction['predictions']['total_goals']['predicted']}")
 print(f"Platform Value: {prediction['predictions']['total_goals']['platform_value']}")
-print(f"Lambda Home: {prediction['meta']['lambda_home']}")
-print(f"Lambda Away: {prediction['meta']['lambda_away']}")
+print(f"Handicap: {prediction['predictions']['handicap']['predicted']}")
+print(f"1X2: Home={prediction['predictions']['1x2']['home']}, Draw={prediction['predictions']['1x2']['draw']}, Away={prediction['predictions']['1x2']['away']}")
 ```
 
 ### JavaScript/Node.js
@@ -407,11 +391,10 @@ const prediction = await getPrediction(
 
 console.log(`Match: ${prediction.match}`);
 console.log(`Family: ${prediction.family}`);
-console.log(`Exact Score: ${prediction.predictions.exact_score.prediction}`);
 console.log(`Total Goals: ${prediction.predictions.total_goals.predicted}`);
 console.log(`Platform Value: ${prediction.predictions.total_goals.platform_value}`);
-console.log(`Lambda Home: ${prediction.meta.lambda_home}`);
-console.log(`Lambda Away: ${prediction.meta.lambda_away}`);
+console.log(`Handicap: ${prediction.predictions.handicap.predicted}`);
+console.log(`1X2: Home=${prediction.predictions['1x2'].home}, Draw=${prediction.predictions['1x2'].draw}, Away=${prediction.predictions['1x2'].away}`);
 ```
 
 ### cURL
@@ -496,7 +479,7 @@ If not configured, the API works without cache.
 For integration support or questions:
 - **Production URL:** https://top-modele-train-api-vmp.onrender.com
 - **Documentation:** This file
-- **Version:** 3.0.0
+- **Version:** 4.0.0
 
 ---
 
@@ -506,78 +489,77 @@ This API is developed by SOLITAIRE HACK.
 
 ---
 
-## 🔄 Migration Guide (v2.2.0 → v3.0.0)
+## 🔄 Migration Guide (v3.0.0 → v4.0.0)
 
 ### Breaking Changes
 
 #### 1. Response Structure Changes
 **Removed Fields:**
-- `history` section (all historical team data)
-- `total_goals.over_under` (multiple thresholds)
-- `handicap` (multiple thresholds)
+- `exact_score` field (no longer predicted)
+- `meta` section (lambda values no longer used)
 
-**Added Fields:**
-- `total_goals.platform_value` (closest platform option)
-- `total_goals.platform_name` (option type)
-- `handicap.platform_value` (closest platform option)
-- `handicap.platform_name` (option type)
-- `meta.lambda_home` (Poisson lambda for home team)
-- `meta.lambda_away` (Poisson lambda for away team)
-- `btts` (Both Teams To Score probabilities)
+**Modified Fields:**
+- `total_goals.predicted` now uses family-specific default values instead of dynamic Poisson calculation
+- `handicap.predicted` now uses family-specific default values instead of dynamic Poisson calculation
 
-**Simplified Fields:**
-- `over_under` (now single under/over instead of multiple thresholds)
-- `handicap` (now single predicted value instead of multiple thresholds)
+**Unchanged Fields:**
+- `1x2` (still predicted by GradientBoostingClassifier)
+- `over_under` (still predicted by GradientBoostingClassifier)
+- `btts` (still predicted by RandomForestClassifier)
+- `parity` (still predicted by RandomForestClassifier)
+- `platform_value` and `platform_name` (still mapped to platform-specific options)
 
-#### 2. Removed Endpoints
-- ❌ `POST /update-history` (no longer supported)
-- ❌ `POST /save-history` (no longer supported)
+#### 2. Model Changes
+**Removed Models:**
+- `poisson_lambda_home` (GradientBoostingRegressor for exact score)
+- `poisson_lambda_away` (GradientBoostingRegressor for exact score)
 
-#### 3. New Features
-- ✅ Dynamic Poisson system for varied exact score predictions
-- ✅ Platform-specific option mapping for each league family
-- ✅ League name mapping (EN ↔ FR)
+**Remaining Models:**
+- `1x2` (GradientBoostingClassifier)
+- `over_under` (GradientBoostingClassifier)
+- `btts` (RandomForestClassifier)
+- `parity` (RandomForestClassifier)
+
+#### 3. New Behavior
+- Total Goals and Handicap now use family-specific default values:
+  - PENALTY: total_goals=6.5, handicap=0.0
+  - HIGHSCORE: total_goals=15.0, handicap=0.0
+  - RUSH: total_goals=7.5, handicap=0.0
+  - CLASSIC: total_goals=3.1, handicap=0.0
 
 ### Migration Steps
 
 1. **Update response parsing:**
 ```python
-# Old (v2.2.0)
-total_goals = prediction['predictions']['total_goals']['predicted']
-over_under = prediction['predictions']['total_goals']['over_under']['2.5']
-
-# New (v3.0.0)
-total_goals = prediction['predictions']['total_goals']['predicted']
-platform_value = prediction['predictions']['total_goals']['platform_value']
-over_under = prediction['predictions']['over_under']
+# Old (v3.0.0)
+exact_score = prediction['predictions']['exact_score']['prediction']
 lambda_home = prediction['meta']['lambda_home']
+lambda_away = prediction['meta']['lambda_away']
+
+# New (v4.0.0)
+# Remove exact_score and meta references
+# They are no longer available
 ```
 
-2. **Remove history-related code:**
+2. **Update prediction logic:**
 ```python
-# Remove these
-history = prediction['history']
-home_matches = prediction['history']['home_last_matches']
+# Old (v3.0.0)
+# Used dynamic Poisson lambdas for exact score
 
-# No longer available in v3.0.0
+# New (v4.0.0)
+# Exact score is no longer predicted
+# Use 1X2, Over/Under, BTTS, and Parity for predictions
 ```
 
-3. **Remove history endpoint calls:**
+3. **Update UI:**
 ```python
-# Remove these
-requests.post(f"{BASE_URL}/update-history", json={...})
-requests.post(f"{BASE_URL}/save-history?family=CLASSIC")
+# Remove exact score display from your UI
+# Remove lambda values display from your UI
+# Keep 1X2, Over/Under, BTTS, Parity, Total Goals, Handicap
 ```
-
-4. **Update league names:**
-The API now automatically maps league names (EN ↔ FR). You can use either format:
-- `"FC 26. 5x5 Rush. Superleague"` (EN)
-- `"FC 26. 5x5 Rush. Superligue"` (FR)
-
-Both will work correctly.
 
 ---
 
 **Last Updated:** 2026-06-19  
-**API Version:** 3.0.0  
+**API Version:** 4.0.0  
 **Status:** Production ✅
