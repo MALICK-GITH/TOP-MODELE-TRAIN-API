@@ -125,20 +125,6 @@ def load_trainbest_models(model_dir="models"):
             print(f"❌ {family} non trouvé")
     return models
 
-def predict_score_exact(lambda_home, lambda_away, max_goals=15):
-    """Prédit le score exact le plus probable avec Poisson"""
-    best_score = (0, 0)
-    best_prob = 0
-    
-    for h in range(max_goals + 1):
-        for a in range(max_goals + 1):
-            prob = poisson.pmf(h, lambda_home) * poisson.pmf(a, lambda_away)
-            if prob > best_prob:
-                best_prob = prob
-                best_score = (h, a)
-    
-    return f"{best_score[0]}-{best_score[1]}"
-
 def predict_with_trainbest_models(team_home, team_away, league, models):
     """Prédit en utilisant les modèles trainBest.py avec Poisson dynamique"""
     # Déterminer la famille
@@ -190,22 +176,19 @@ def predict_with_trainbest_models(team_home, team_away, league, models):
     model_parity = model_data["models"]["parity"]
     prob_parity = model_parity.predict_proba(X)[0]
     
-    # Score exact avec Poisson dynamique
-    if "poisson_lambda_home" in model_data["models"] and "poisson_lambda_away" in model_data["models"]:
-        model_lambda_home = model_data["models"]["poisson_lambda_home"]
-        model_lambda_away = model_data["models"]["poisson_lambda_away"]
-        lambda_home = model_lambda_home.predict(X)[0]
-        lambda_away = model_lambda_away.predict(X)[0]
-    else:
-        poisson_params = model_data["models"]["poisson"]
-        lambda_home = poisson_params["lambda_home"]
-        lambda_away = poisson_params["lambda_away"]
+    # Score exact désactivé - plus de calcul Poisson
+    # Calculer Total Goals et Handicap basés sur les probabilités 1X2
+    # Valeurs par famille pour total_goals et handicap
+    family_defaults = {
+        "PENALTY": {"total_goals": 6.5, "handicap": 0.0},
+        "HIGHSCORE": {"total_goals": 15.0, "handicap": 0.0},
+        "RUSH": {"total_goals": 7.5, "handicap": 0.0},
+        "CLASSIC": {"total_goals": 3.1, "handicap": 0.0}
+    }
     
-    exact_score = predict_score_exact(lambda_home, lambda_away)
-    
-    # Calculer Total Goals et Handicap
-    total_goals_pred = round(lambda_home + lambda_away, 1)
-    handicap_pred = round(lambda_home - lambda_away, 1)
+    defaults = family_defaults.get(family, {"total_goals": 3.0, "handicap": 0.0})
+    total_goals_pred = defaults["total_goals"]
+    handicap_pred = defaults["handicap"]
     
     # Mapper aux options de la plateforme
     handicap_opt_value, handicap_opt_name = map_prediction_to_platform("handicap", handicap_pred, family)
@@ -243,14 +226,7 @@ def predict_with_trainbest_models(team_home, team_away, league, models):
             "parity": {
                 "pair": round(prob_parity[0], 3),
                 "impair": round(prob_parity[1], 3)
-            },
-            "exact_score": {
-                "prediction": exact_score
             }
-        },
-        "meta": {
-            "lambda_home": round(lambda_home, 2),
-            "lambda_away": round(lambda_away, 2)
         }
     }
 
