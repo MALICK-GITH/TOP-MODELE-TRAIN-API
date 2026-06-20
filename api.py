@@ -307,6 +307,9 @@ class PredictionRequest(BaseModel):
     team_away: str = Field(..., description="Équipe extérieur")
     league: str = Field(..., description="Nom de la ligue/championnat")
 
+class BatchPredictionRequest(BaseModel):
+    matches: List[PredictionRequest] = Field(..., description="Liste des matchs à prédire")
+
 class UpdateHistoryRequest(BaseModel):
     team_home: str = Field(..., description="Équipe domicile")
     team_away: str = Field(..., description="Équipe extérieur")
@@ -439,15 +442,76 @@ async def predict(request: PredictionRequest):
             models=trainbest_models
         )
         
-        # Stocker dans le cache (5 minutes)
+        # Mettre en cache le résultat
         if cache_instance:
-            cache_instance.set(cache_key, prediction, ttl=300)
+            cache_instance.set(cache_key, prediction, ttl=300)  # 5 minutes
         
         return prediction
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Erreur de prédiction: {str(e)}")
+
+@app.post("/batch-predict")
+async def batch_predict(request: BatchPredictionRequest):
+    """
+    Prédit plusieurs matchs FIFA virtuels en une seule requête.
+    
+    Cette endpoint permet d'obtenir des prédictions pour plusieurs matchs en une seule requête,
+    ce qui est plus efficace que d'appeler l'endpoint /predict plusieurs fois.
+    
+    Retourne:
+      - predictions: Liste des prédictions pour chaque match
+      - total: Nombre total de matchs traités
+      - successful: Nombre de prédictions réussies
+    """
+    if trainbest_models is None:
+        raise HTTPException(status_code=503, detail="Modèles non chargés")
+    
+    predictions = []
+    successful = 0
+    
+    for match_request in request.matches:
+        try:
+            # Map la ligue live vers la ligue entraînée
+            mapped_league = map_league(match_request.league)
+            
+            # Générer la clé de cache
+            cache_key = f"predict:{match_request.team_home}:{match_request.team_away}:{mapped_league}"
+            
+            # Essayer de récupérer du cache
+            if cache_instance:
+                cached_result = cache_instance.get(cache_key)
+                if cached_result:
+                    predictions.append(cached_result)
+                    successful += 1
+                    continue
+            
+            # Calculer la prédiction
+            prediction = predict_with_trainbest_models(
+                team_home=match_request.team_home,
+                team_away=match_request.team_away,
+                league=mapped_league,
+                models=trainbest_models
+            )
+            
+            # Mettre en cache le résultat
+            if cache_instance:
+                cache_instance.set(cache_key, prediction, ttl=300)  # 5 minutes
+            
+            predictions.append(prediction)
+            successful += 1
+        except Exception as e:
+            # Ajouter une erreur pour ce match mais continuer avec les autres
+            predictions.append({
+                "error": str(e),
+                "match": f"{match_request.team_home} vs {match_request.team_away}",
+                "league": match_request.league
+            })
+    
+    return {
+        "predictions": predictions,
+        "total": len(request.matches),
+        "successful": successful
+    }
 
 @app.post("/clear-cache")
 async def clear_cache():
@@ -460,11 +524,44 @@ async def clear_cache():
         raise HTTPException(status_code=503, detail="Cache non disponible")
     
     try:
-        # Nettoyer toutes les clés de prédictions
-        cache_instance.clear_pattern("predict:*")
-        return {"status": "success", "message": "Cache nettoyé"}
+        cache_instance.flushdb()
+        return {"status": "success", "message": "Cache vidé avec succès"}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Erreur de nettoyage: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Erreur lors du vidage du cache: {str(e)}")
+
+@app.get("/model-info")
+async def model_info():
+    """
+    Retourne des informations sur les modèles chargés.
+    
+    Retourne:
+      - families: Liste des familles de modèles chargés
+      - models: Détails des modèles par famille
+      - version: Version de l'API
+      - last_updated: Date de la dernière mise à jour des modèles
+    """
+    if trainbest_models is None:
+        raise HTTPException(status_code=503, detail="Modèles non chargés")
+    
+    model_details = {}
+    for family, model_data in trainbest_models.items():
+        models_list = list(model_data.get("models", {}).keys())
+        leagues = model_data.get("leagues", [])
+        thresholds = model_data.get("thresholds", {})
+        
+        model_details[family] = {
+            "models": models_list,
+            "leagues_count": len(leagues),
+            "leagues_sample": leagues[:5] if len(leagues) > 5 else leagues,
+            "has_regression": "total_goals_regressor" in models_list and "handicap_regressor" in models_list
+        }
+    
+    return {
+        "version": "5.0.0",
+        "families": list(trainbest_models.keys()),
+        "models": model_details,
+        "cache_enabled": cache_instance is not None
+    }
 
 # ──────────────────────────────────────────────────────────────────────────────
 # Main
