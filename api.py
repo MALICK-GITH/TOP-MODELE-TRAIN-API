@@ -176,19 +176,55 @@ def predict_with_trainbest_models(team_home, team_away, league, models):
     model_parity = model_data["models"]["parity"]
     prob_parity = model_parity.predict_proba(X)[0]
     
-    # Score exact désactivé - plus de calcul Poisson
-    # Calculer Total Goals et Handicap basés sur les probabilités 1X2
-    # Valeurs par famille pour total_goals et handicap
-    family_defaults = {
-        "PENALTY": {"total_goals": 6.5, "handicap": 0.0},
-        "HIGHSCORE": {"total_goals": 15.0, "handicap": 0.0},
-        "RUSH": {"total_goals": 7.5, "handicap": 0.0},
-        "CLASSIC": {"total_goals": 3.1, "handicap": 0.0}
-    }
+    # Prédire Score Range
+    if "score_range" in model_data["models"]:
+        model_score_range = model_data["models"]["score_range"]
+        prob_score_range = model_score_range.predict_proba(X)[0]
+    else:
+        prob_score_range = [0.25, 0.25, 0.25, 0.25]
     
-    defaults = family_defaults.get(family, {"total_goals": 3.0, "handicap": 0.0})
-    total_goals_pred = defaults["total_goals"]
-    handicap_pred = defaults["handicap"]
+    # Prédire Double Chance
+    if "double_chance" in model_data["models"]:
+        model_double_chance = model_data["models"]["double_chance"]
+        prob_double_chance = model_double_chance.predict_proba(X)[0]
+    else:
+        prob_double_chance = [0.33, 0.33, 0.34]
+    
+    # Prédire Clean Sheet Home
+    if "clean_sheet_home" in model_data["models"]:
+        model_clean_sheet_home = model_data["models"]["clean_sheet_home"]
+        prob_clean_sheet_home = model_clean_sheet_home.predict_proba(X)[0]
+    else:
+        prob_clean_sheet_home = [0.5, 0.5]
+    
+    # Prédire Clean Sheet Away
+    if "clean_sheet_away" in model_data["models"]:
+        model_clean_sheet_away = model_data["models"]["clean_sheet_away"]
+        prob_clean_sheet_away = model_clean_sheet_away.predict_proba(X)[0]
+    else:
+        prob_clean_sheet_away = [0.5, 0.5]
+    
+    # Score exact désactivé - plus de calcul Poisson
+    # Utiliser les modèles de régression pour Total Goals et Handicap
+    if "total_goals_regressor" in model_data["models"]:
+        model_total_goals = model_data["models"]["total_goals_regressor"]
+        total_goals_pred = round(model_total_goals.predict(X)[0], 1)
+    else:
+        # Fallback aux valeurs par défaut si le modèle n'existe pas
+        family_defaults = {
+            "PENALTY": 6.5,
+            "HIGHSCORE": 15.0,
+            "RUSH": 7.5,
+            "CLASSIC": 3.1
+        }
+        total_goals_pred = family_defaults.get(family, 3.0)
+    
+    if "handicap_regressor" in model_data["models"]:
+        model_handicap = model_data["models"]["handicap_regressor"]
+        handicap_pred = round(model_handicap.predict(X)[0], 1)
+    else:
+        # Fallback aux valeurs par défaut si le modèle n'existe pas
+        handicap_pred = 0.0
     
     # Mapper aux options de la plateforme
     handicap_opt_value, handicap_opt_name = map_prediction_to_platform("handicap", handicap_pred, family)
@@ -226,6 +262,23 @@ def predict_with_trainbest_models(team_home, team_away, league, models):
             "parity": {
                 "pair": round(prob_parity[0], 3),
                 "impair": round(prob_parity[1], 3)
+            },
+            "score_range": {
+                "0-2": round(prob_score_range[0], 3),
+                "3-5": round(prob_score_range[1], 3),
+                "6-8": round(prob_score_range[2], 3),
+                "9+": round(prob_score_range[3], 3)
+            },
+            "double_chance": {
+                "1x": round(prob_double_chance[0], 3),
+                "x2": round(prob_double_chance[1], 3),
+                "12": round(prob_double_chance[2], 3)
+            },
+            "clean_sheet": {
+                "home_no": round(prob_clean_sheet_home[0], 3),
+                "home_yes": round(prob_clean_sheet_home[1], 3),
+                "away_no": round(prob_clean_sheet_away[0], 3),
+                "away_yes": round(prob_clean_sheet_away[1], 3)
             }
         }
     }

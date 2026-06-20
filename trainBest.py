@@ -270,6 +270,13 @@ for _, match in df.iterrows():
         "score_home": gh,
         "score_away": ga,
         "total_goals":total,
+        "handicap":   gh - ga,
+        "score_range": 0 if total <= 2 else (1 if total <= 5 else (2 if total <= 8 else 3)),
+        "double_chance": 0 if result == 0 else (1 if result == 2 else 2),  # 0=1X, 1=X2, 2=12
+        "draw_no_bet": 0 if result == 0 else (1 if result == 2 else 0.5),  # 0=home, 1=away, 0.5=draw
+        "win_both_halves": 1 if (gh > 0 and ga > 0) else 0,  # Simplifié - nécessiterait données par mi-temps
+        "clean_sheet_home": 1 if ga == 0 else 0,
+        "clean_sheet_away": 1 if gh == 0 else 0,
     }
     rows.append(row)
 
@@ -283,7 +290,8 @@ print(f"✅ Dataset enrichi : {len(train_df)} matchs | {len(train_df.columns)} c
 
 # ─── Features pour ML ─────────────────────────────────────────────────────────
 META   = ["match_id","league","family","team_home","team_away","threshold",
-          "result","over_under","btts","parity","score_home","score_away","total_goals"]
+          "result","over_under","btts","parity","score_home","score_away","total_goals","handicap","score_range",
+          "double_chance","draw_no_bet","win_both_halves","clean_sheet_home","clean_sheet_away"]
 FEATURES = [c for c in train_df.columns if c not in META]
 
 print(f"📊 {len(FEATURES)} features d'entraînement")
@@ -311,6 +319,10 @@ for family in ["PENALTY", "HIGHSCORE", "RUSH", "CLASSIC"]:
         ("over_under", fdf["over_under"], "gb"),
         ("btts",      fdf["btts"],       "rf"),
         ("parity",    fdf["parity"],     "rf"),
+        ("score_range", fdf["score_range"], "gb"),
+        ("double_chance", fdf["double_chance"], "gb"),
+        ("clean_sheet_home", fdf["clean_sheet_home"], "rf"),
+        ("clean_sheet_away", fdf["clean_sheet_away"], "rf"),
     ]:
         # Skip parity/btts pour PENALTY (0% nul, patterns très clairs)
         strat = y if y.value_counts().min() >= 2 else None
@@ -332,7 +344,8 @@ for family in ["PENALTY", "HIGHSCORE", "RUSH", "CLASSIC"]:
 
         # Calibration pour avoir des probabilités fiables
         min_class = y_tr.value_counts().min()
-        if min_class >= 10:
+        # Désactiver calibration pour clean_sheet (problème avec calibration binaire)
+        if min_class >= 10 and target not in ["clean_sheet_home", "clean_sheet_away"]:
             model = CalibratedClassifierCV(base, cv=3, method="isotonic")
         else:
             model = base
@@ -344,9 +357,43 @@ for family in ["PENALTY", "HIGHSCORE", "RUSH", "CLASSIC"]:
         family_stats[f"{target}_acc"] = round(acc, 4)
         print(f"   [{target:<12}] Acc: {acc*100:.1f}%")
 
-    # ── Score exact désactivé ─────────────────────────────────────────────────
-    # Les modèles Poisson pour le score exact ont été désactivés
-    # Seuls les modèles 1X2, Over/Under, BTTS et Parité sont entraînés
+    # ── Modèles de régression pour Total Goals et Handicap ─────────────────────
+    from sklearn.ensemble import GradientBoostingRegressor
+    from sklearn.metrics import mean_squared_error, r2_score
+    
+    # Modèle pour total_goals
+    X_tr, X_te, y_tr, y_te = train_test_split(
+        X, fdf["total_goals"], test_size=0.2, random_state=42
+    )
+    model_total_goals = GradientBoostingRegressor(
+        n_estimators=200, max_depth=4, learning_rate=0.1,
+        subsample=0.8, min_samples_leaf=5, random_state=42
+    )
+    model_total_goals.fit(X_tr, y_tr)
+    y_pred_total = model_total_goals.predict(X_te)
+    mse_total = mean_squared_error(y_te, y_pred_total)
+    r2_total = r2_score(y_te, y_pred_total)
+    family_models["total_goals_regressor"] = model_total_goals
+    family_stats["total_goals_mse"] = round(mse_total, 3)
+    family_stats["total_goals_r2"] = round(r2_total, 3)
+    print(f"   [total_goals  ] MSE={mse_total:.3f} | R2={r2_total:.3f}")
+    
+    # Modèle pour handicap
+    X_tr, X_te, y_tr, y_te = train_test_split(
+        X, fdf["handicap"], test_size=0.2, random_state=42
+    )
+    model_handicap = GradientBoostingRegressor(
+        n_estimators=200, max_depth=4, learning_rate=0.1,
+        subsample=0.8, min_samples_leaf=5, random_state=42
+    )
+    model_handicap.fit(X_tr, y_tr)
+    y_pred_handicap = model_handicap.predict(X_te)
+    mse_handicap = mean_squared_error(y_te, y_pred_handicap)
+    r2_handicap = r2_score(y_te, y_pred_handicap)
+    family_models["handicap_regressor"] = model_handicap
+    family_stats["handicap_mse"] = round(mse_handicap, 3)
+    family_stats["handicap_r2"] = round(r2_handicap, 3)
+    print(f"   [handicap      ] MSE={mse_handicap:.3f} | R2={r2_handicap:.3f}")
 
     # ── Sauvegarde ─────────────────────────────────────────────────────────────
     # Seuils O/U par ligue dans cette famille
