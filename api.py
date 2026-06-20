@@ -89,9 +89,9 @@ def map_league(league: str) -> str:
     # Sinon, retourner la ligue telle quelle
     return league
 
-# Import du cache Upstash (optionnel)
+# Import du cache Upstash Redis (optionnel)
 try:
-    from upstash_cache import get_cache
+    from upstash_redis import Redis
     CACHE_AVAILABLE = True
 except ImportError:
     CACHE_AVAILABLE = False
@@ -344,11 +344,21 @@ async def startup_event():
     # Initialiser le cache Upstash si disponible
     if CACHE_AVAILABLE:
         try:
-            cache_instance = get_cache()
-            if cache_instance.ping():
-                print("✅ Cache Upstash initialisé")
+            redis_url = os.getenv("UPSTASH_REDIS_REST_URL")
+            redis_token = os.getenv("UPSTASH_REDIS_REST_TOKEN")
+            
+            if redis_url and redis_token:
+                cache_instance = Redis(url=redis_url, token=redis_token)
+                # Test de connexion
+                cache_instance.set("test", "ok", ex=1)
+                test_value = cache_instance.get("test")
+                if test_value == "ok":
+                    print("✅ Cache Upstash initialisé")
+                else:
+                    print("⚠️  Cache Upstash non disponible (test de connexion échoué)")
+                    cache_instance = None
             else:
-                print("⚠️  Cache Upstash non disponible (connexion échouée)")
+                print("⚠️  Variables d'environnement Upstash non configurées")
                 cache_instance = None
         except Exception as e:
             print(f"⚠️  Cache Upstash non disponible: {e}")
@@ -432,7 +442,8 @@ async def predict(request: PredictionRequest):
         if cache_instance:
             cached_result = cache_instance.get(cache_key)
             if cached_result:
-                return cached_result
+                import json
+                return json.loads(cached_result)
         
         # Calculer la prédiction avec Poisson dynamique
         prediction = predict_with_trainbest_models(
@@ -444,7 +455,8 @@ async def predict(request: PredictionRequest):
         
         # Mettre en cache le résultat
         if cache_instance:
-            cache_instance.set(cache_key, prediction, ttl=300)  # 5 minutes
+            import json
+            cache_instance.set(cache_key, json.dumps(prediction), ex=300)  # 5 minutes
         
         return prediction
     except Exception as e:
@@ -481,7 +493,8 @@ async def batch_predict(request: BatchPredictionRequest):
             if cache_instance:
                 cached_result = cache_instance.get(cache_key)
                 if cached_result:
-                    predictions.append(cached_result)
+                    import json
+                    predictions.append(json.loads(cached_result))
                     successful += 1
                     continue
             
@@ -495,7 +508,8 @@ async def batch_predict(request: BatchPredictionRequest):
             
             # Mettre en cache le résultat
             if cache_instance:
-                cache_instance.set(cache_key, prediction, ttl=300)  # 5 minutes
+                import json
+                cache_instance.set(cache_key, json.dumps(prediction), ex=300)  # 5 minutes
             
             predictions.append(prediction)
             successful += 1
