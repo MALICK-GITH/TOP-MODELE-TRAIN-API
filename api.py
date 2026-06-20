@@ -238,6 +238,26 @@ def predict_with_trainbest_models(team_home, team_away, league, models):
         prob_clean_sheet_away = [0.5, 0.5]
         confidence_clean_sheet_away = 0.5
     
+    # Prédire Draw No Bet
+    if "draw_no_bet" in model_data["models"]:
+        model_draw_no_bet = model_data["models"]["draw_no_bet"]
+        prob_draw_no_bet = model_draw_no_bet.predict_proba(X)[0]
+        acc_draw_no_bet = model_stats.get("draw_no_bet_acc", 0.5)
+        confidence_draw_no_bet = calculate_confidence(prob_draw_no_bet, acc_draw_no_bet)
+    else:
+        prob_draw_no_bet = [0.33, 0.33, 0.34]
+        confidence_draw_no_bet = 0.5
+    
+    # Prédire Win Both Halves
+    if "win_both_halves" in model_data["models"]:
+        model_win_both_halves = model_data["models"]["win_both_halves"]
+        prob_win_both_halves = model_win_both_halves.predict_proba(X)[0]
+        acc_win_both_halves = model_stats.get("win_both_halves_acc", 0.5)
+        confidence_win_both_halves = calculate_confidence(prob_win_both_halves, acc_win_both_halves)
+    else:
+        prob_win_both_halves = [0.5, 0.5]
+        confidence_win_both_halves = 0.5
+    
     # Score exact désactivé - plus de calcul Poisson
     # Utiliser les modèles de régression pour Total Goals et Handicap
     if "total_goals_regressor" in model_data["models"]:
@@ -320,6 +340,17 @@ def predict_with_trainbest_models(team_home, team_away, league, models):
                 "away_no": round(prob_clean_sheet_away[0], 3),
                 "away_yes": round(prob_clean_sheet_away[1], 3),
                 "confidence": (confidence_clean_sheet_home + confidence_clean_sheet_away) / 2
+            },
+            "draw_no_bet": {
+                "home": round(prob_draw_no_bet[0], 3),
+                "away": round(prob_draw_no_bet[1], 3),
+                "draw": round(prob_draw_no_bet[2], 3),
+                "confidence": confidence_draw_no_bet
+            },
+            "win_both_halves": {
+                "no": round(prob_win_both_halves[0], 3),
+                "yes": round(prob_win_both_halves[1], 3),
+                "confidence": confidence_win_both_halves
             }
         }
     }

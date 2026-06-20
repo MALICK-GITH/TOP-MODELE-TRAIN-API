@@ -323,6 +323,8 @@ for family in ["PENALTY", "HIGHSCORE", "RUSH", "CLASSIC"]:
         ("double_chance", fdf["double_chance"], "gb"),
         ("clean_sheet_home", fdf["clean_sheet_home"], "rf"),
         ("clean_sheet_away", fdf["clean_sheet_away"], "rf"),
+        ("draw_no_bet", fdf["draw_no_bet"].astype(int), "gb"),  # Convertir 0.5 en int pour classification
+        ("win_both_halves", fdf["win_both_halves"], "rf"),
     ]:
         # Skip parity/btts pour PENALTY (0% nul, patterns très clairs)
         strat = y if y.value_counts().min() >= 2 else None
@@ -344,8 +346,8 @@ for family in ["PENALTY", "HIGHSCORE", "RUSH", "CLASSIC"]:
 
         # Calibration pour avoir des probabilités fiables
         min_class = y_tr.value_counts().min()
-        # Désactiver calibration pour clean_sheet (problème avec calibration binaire)
-        if min_class >= 10 and target not in ["clean_sheet_home", "clean_sheet_away"]:
+        # Désactiver calibration pour clean_sheet, draw_no_bet, win_both_halves (problème avec calibration binaire)
+        if min_class >= 10 and target not in ["clean_sheet_home", "clean_sheet_away", "draw_no_bet", "win_both_halves"]:
             model = CalibratedClassifierCV(base, cv=3, method="isotonic")
         else:
             model = base
