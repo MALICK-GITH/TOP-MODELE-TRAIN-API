@@ -125,6 +125,17 @@ def load_trainbest_models(model_dir="models"):
             print(f"❌ {family} non trouvé")
     return models
 
+def calculate_confidence(probabilities, model_accuracy):
+    """Calcule un score de confiance basé sur les probabilités et l'accuracy du modèle"""
+    # Confiance basée sur la certitude de la prédiction (entropie inverse)
+    max_prob = max(probabilities)
+    certainty = max_prob  # Plus la probabilité max est élevée, plus on est confiant
+    
+    # Ajuster par l'accuracy du modèle
+    confidence = (certainty * 0.7) + (model_accuracy * 0.3)
+    
+    return round(min(confidence, 1.0), 3)
+
 def predict_with_trainbest_models(team_home, team_away, league, models):
     """Prédit en utilisant les modèles trainBest.py avec Poisson dynamique"""
     # Déterminer la famille
@@ -141,6 +152,9 @@ def predict_with_trainbest_models(team_home, team_away, league, models):
         raise ValueError(f"Modèle pour {family} non chargé")
     
     model_data = models[family]
+    
+    # Récupérer les statistiques des modèles pour calculer la confiance
+    model_stats = model_data.get("stats", {})
     
     # Créer des features fictifs (à remplacer par de vrais features historiques)
     features = {}
@@ -163,46 +177,66 @@ def predict_with_trainbest_models(team_home, team_away, league, models):
     # Prédire 1X2
     model_1x2 = model_data["models"]["1x2"]
     prob_1x2 = model_1x2.predict_proba(X)[0]
+    acc_1x2 = model_stats.get("1x2_acc", 0.5)
+    confidence_1x2 = calculate_confidence(prob_1x2, acc_1x2)
     
     # Prédire Over/Under
     model_ou = model_data["models"]["over_under"]
     prob_ou = model_ou.predict_proba(X)[0]
+    acc_ou = model_stats.get("over_under_acc", 0.5)
+    confidence_ou = calculate_confidence(prob_ou, acc_ou)
     
     # Prédire BTTS
     model_btts = model_data["models"]["btts"]
     prob_btts = model_btts.predict_proba(X)[0]
+    acc_btts = model_stats.get("btts_acc", 0.5)
+    confidence_btts = calculate_confidence(prob_btts, acc_btts)
     
     # Prédire Parité
     model_parity = model_data["models"]["parity"]
     prob_parity = model_parity.predict_proba(X)[0]
+    acc_parity = model_stats.get("parity_acc", 0.5)
+    confidence_parity = calculate_confidence(prob_parity, acc_parity)
     
     # Prédire Score Range
     if "score_range" in model_data["models"]:
         model_score_range = model_data["models"]["score_range"]
         prob_score_range = model_score_range.predict_proba(X)[0]
+        acc_score_range = model_stats.get("score_range_acc", 0.5)
+        confidence_score_range = calculate_confidence(prob_score_range, acc_score_range)
     else:
         prob_score_range = [0.25, 0.25, 0.25, 0.25]
+        confidence_score_range = 0.5
     
     # Prédire Double Chance
     if "double_chance" in model_data["models"]:
         model_double_chance = model_data["models"]["double_chance"]
         prob_double_chance = model_double_chance.predict_proba(X)[0]
+        acc_double_chance = model_stats.get("double_chance_acc", 0.5)
+        confidence_double_chance = calculate_confidence(prob_double_chance, acc_double_chance)
     else:
         prob_double_chance = [0.33, 0.33, 0.34]
+        confidence_double_chance = 0.5
     
     # Prédire Clean Sheet Home
     if "clean_sheet_home" in model_data["models"]:
         model_clean_sheet_home = model_data["models"]["clean_sheet_home"]
         prob_clean_sheet_home = model_clean_sheet_home.predict_proba(X)[0]
+        acc_clean_sheet_home = model_stats.get("clean_sheet_home_acc", 0.5)
+        confidence_clean_sheet_home = calculate_confidence(prob_clean_sheet_home, acc_clean_sheet_home)
     else:
         prob_clean_sheet_home = [0.5, 0.5]
+        confidence_clean_sheet_home = 0.5
     
     # Prédire Clean Sheet Away
     if "clean_sheet_away" in model_data["models"]:
         model_clean_sheet_away = model_data["models"]["clean_sheet_away"]
         prob_clean_sheet_away = model_clean_sheet_away.predict_proba(X)[0]
+        acc_clean_sheet_away = model_stats.get("clean_sheet_away_acc", 0.5)
+        confidence_clean_sheet_away = calculate_confidence(prob_clean_sheet_away, acc_clean_sheet_away)
     else:
         prob_clean_sheet_away = [0.5, 0.5]
+        confidence_clean_sheet_away = 0.5
     
     # Score exact désactivé - plus de calcul Poisson
     # Utiliser les modèles de régression pour Total Goals et Handicap
@@ -239,7 +273,8 @@ def predict_with_trainbest_models(team_home, team_away, league, models):
             "1x2": {
                 "home": round(prob_1x2[0], 3),
                 "draw": round(prob_1x2[1], 3),
-                "away": round(prob_1x2[2], 3)
+                "away": round(prob_1x2[2], 3),
+                "confidence": confidence_1x2
             },
             "total_goals": {
                 "predicted": total_goals_pred,
@@ -253,32 +288,38 @@ def predict_with_trainbest_models(team_home, team_away, league, models):
             },
             "over_under": {
                 "under": round(prob_ou[0], 3),
-                "over": round(prob_ou[1], 3)
+                "over": round(prob_ou[1], 3),
+                "confidence": confidence_ou
             },
             "btts": {
                 "no": round(prob_btts[0], 3),
-                "yes": round(prob_btts[1], 3)
+                "yes": round(prob_btts[1], 3),
+                "confidence": confidence_btts
             },
             "parity": {
                 "pair": round(prob_parity[0], 3),
-                "impair": round(prob_parity[1], 3)
+                "impair": round(prob_parity[1], 3),
+                "confidence": confidence_parity
             },
             "score_range": {
                 "0-2": round(prob_score_range[0], 3),
                 "3-5": round(prob_score_range[1], 3),
                 "6-8": round(prob_score_range[2], 3),
-                "9+": round(prob_score_range[3], 3)
+                "9+": round(prob_score_range[3], 3),
+                "confidence": confidence_score_range
             },
             "double_chance": {
                 "1x": round(prob_double_chance[0], 3),
                 "x2": round(prob_double_chance[1], 3),
-                "12": round(prob_double_chance[2], 3)
+                "12": round(prob_double_chance[2], 3),
+                "confidence": confidence_double_chance
             },
             "clean_sheet": {
                 "home_no": round(prob_clean_sheet_home[0], 3),
                 "home_yes": round(prob_clean_sheet_home[1], 3),
                 "away_no": round(prob_clean_sheet_away[0], 3),
-                "away_yes": round(prob_clean_sheet_away[1], 3)
+                "away_yes": round(prob_clean_sheet_away[1], 3),
+                "confidence": (confidence_clean_sheet_home + confidence_clean_sheet_away) / 2
             }
         }
     }
