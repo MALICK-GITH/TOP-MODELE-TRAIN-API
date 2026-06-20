@@ -618,6 +618,76 @@ async def model_info():
         "cache_enabled": cache_instance is not None
     }
 
+@app.get("/team-stats/{team_name}")
+async def get_team_stats(team_name: str):
+    """
+    Retourne les statistiques d'une équipe.
+    
+    Note: Les statistiques sont basées sur les configurations des familles et ligues.
+    Pour des statistiques historiques réelles, une base de données serait nécessaire.
+    """
+    # Trouver les ligues où l'équipe apparaît
+    team_leagues = []
+    for family, fam_data in FAMILIES.items():
+        for league in fam_data["leagues"]:
+            # Simuler la présence de l'équipe dans les ligues
+            # Dans une vraie implémentation, on aurait une base de données
+            team_leagues.append({
+                "league": league,
+                "family": family
+            })
+    
+    # Statistiques simulées basées sur la famille
+    stats = {
+        "team": team_name,
+        "total_matches": len(team_leagues) * 10,  # Simulé
+        "leagues": team_leagues,
+        "performance": {
+            "avg_goals_scored": round(FAMILIES.get(team_leagues[0]["family"], {}).get("avg_goals", 3.0) / 2, 2) if team_leagues else 1.5,
+            "avg_goals_conceded": round(FAMILIES.get(team_leagues[0]["family"], {}).get("avg_goals", 3.0) / 2, 2) if team_leagues else 1.5,
+            "win_rate": 0.45,  # Simulé
+            "draw_rate": 0.25,  # Simulé
+            "loss_rate": 0.30   # Simulé
+        },
+        "form": ["W", "D", "W", "L", "W"],  # Simulé
+        "note": "Statistiques simulées - nécessite une base de données pour des données réelles"
+    }
+    
+    return stats
+
+@app.get("/league-stats/{league_name}")
+async def get_league_stats(league_name: str):
+    """
+    Retourne les statistiques d'une ligue.
+    """
+    # Trouver la famille de la ligue
+    family = None
+    for fam, fam_data in FAMILIES.items():
+        if league_name in fam_data["leagues"]:
+            family = fam
+            break
+    
+    if family is None:
+        raise HTTPException(status_code=404, detail=f"Ligue {league_name} non trouvée")
+    
+    fam_data = FAMILIES[family]
+    
+    stats = {
+        "league": league_name,
+        "family": family,
+        "configuration": {
+            "has_draw": fam_data["has_draw"],
+            "avg_goals": fam_data["avg_goals"]
+        },
+        "teams_count": 20,  # Simulé
+        "total_matches": 100,  # Simulé
+        "goals_per_match": fam_data["avg_goals"],
+        "draw_rate": 0.25 if fam_data["has_draw"] else 0.10,
+        "note": "Statistiques basées sur la configuration de la famille"
+    }
+    
+    return stats
+
 # ──────────────────────────────────────────────────────────────────────────────
 # Main
 # ──────────────────────────────────────────────────────────────────────────────
