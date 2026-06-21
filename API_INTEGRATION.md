@@ -41,6 +41,15 @@ GET /health
 }
 ```
 
+**Actual API Response:**
+```json
+{
+  "status": "healthy",
+  "models_loaded": true,
+  "families": ["PENALTY", "HIGHSCORE", "RUSH", "CLASSIC"]
+}
+```
+
 ---
 
 ### 2. Predict Match
@@ -133,6 +142,72 @@ Content-Type: application/json
 }
 ```
 
+**Actual API Response (RUSH League):**
+```json
+{
+  "match": "Chelsea vs Club Atlético de Madrid",
+  "league": "FC 26. 5x5 Rush. Superligue",
+  "family": "RUSH",
+  "predictions": {
+    "1x2": {"home": 0.334, "draw": 0.12, "away": 0.547, "confidence": 0.533},
+    "total_goals": {"predicted": 7.5, "platform_value": 7.5, "platform_name": "Total Goals"},
+    "handicap": {"predicted": -4.2, "platform_value": -4.0, "platform_name": "Handicap"},
+    "over_under": {"under": 0.336, "over": 0.664, "confidence": 0.615},
+    "btts": {"no": 0.069, "yes": 0.931, "confidence": 0.801},
+    "parity": {"pair": 0.481, "impair": 0.519, "confidence": 0.513},
+    "score_range": {"0-2": 0.048, "3-5": 0.306, "6-8": 0.322, "9+": 0.324, "confidence": 0.377},
+    "double_chance": {"1x": 0.371, "x2": 0.481, "12": 0.149, "confidence": 0.486},
+    "clean_sheet": {"home_no": 0.941, "home_yes": 0.059, "away_no": 0.829, "away_yes": 0.171, "confidence": 0.7695000000000001},
+    "draw_no_bet": {"home": 0.018, "away": 0.982, "draw": 0.0, "confidence": 0.838},
+    "win_both_halves": {"no": 0.322, "yes": 0.678, "confidence": 0.624}
+  }
+}
+```
+
+**Actual API Response (CLASSIC League):**
+```json
+{
+  "match": "Real Madrid vs Barcelona",
+  "league": "FC 25. Champions League",
+  "family": "CLASSIC",
+  "predictions": {
+    "1x2": {"home": 0.421, "draw": 0.23, "away": 0.349, "confidence": 0.445},
+    "total_goals": {"predicted": 4.5, "platform_value": 4.5, "platform_name": "Total Goals"},
+    "handicap": {"predicted": 0.6, "platform_value": 0.5, "platform_name": "Handicap"},
+    "over_under": {"under": 0.418, "over": 0.582, "confidence": 0.557},
+    "btts": {"no": 0.401, "yes": 0.599, "confidence": 0.569},
+    "parity": {"pair": 0.496, "impair": 0.504, "confidence": 0.503},
+    "score_range": {"0-2": 0.361, "3-5": 0.519, "6-8": 0.114, "9+": 0.006, "confidence": 0.513},
+    "double_chance": {"1x": 0.402, "x2": 0.403, "12": 0.195, "confidence": 0.432},
+    "clean_sheet": {"home_no": 0.562, "home_yes": 0.438, "away_no": 0.561, "away_yes": 0.439, "confidence": 0.5435000000000001},
+    "draw_no_bet": {"home": 0.618, "away": 0.382, "draw": 0.0, "confidence": 0.582},
+    "win_both_halves": {"no": 0.489, "yes": 0.511, "confidence": 0.508}
+  }
+}
+```
+
+**Actual API Response (HIGHSCORE League):**
+```json
+{
+  "match": "Team A vs Team B",
+  "league": "FC 25. 3x3. Ligue de conférence",
+  "family": "HIGHSCORE",
+  "predictions": {
+    "1x2": {"home": 0.337, "draw": 0.184, "away": 0.479, "confidence": 0.485},
+    "total_goals": {"predicted": 13.7, "platform_value": 13.5, "platform_name": "Total Goals"},
+    "handicap": {"predicted": -3.8, "platform_value": -4.0, "platform_name": "Handicap"},
+    "over_under": {"under": 0.29, "over": 0.71, "confidence": 0.647},
+    "btts": {"no": 0.004, "yes": 0.996, "confidence": 0.847},
+    "parity": {"pair": 0.461, "impair": 0.539, "confidence": 0.528},
+    "score_range": {"0-2": 0.25, "3-5": 0.25, "6-8": 0.25, "9+": 0.25, "confidence": 0.325},
+    "double_chance": {"1x": 0.427, "x2": 0.445, "12": 0.128, "confidence": 0.461},
+    "clean_sheet": {"home_no": 0.5, "home_yes": 0.5, "away_no": 0.916, "away_yes": 0.084, "confidence": 0.646},
+    "draw_no_bet": {"home": 0.358, "away": 0.642, "draw": 0.0, "confidence": 0.6},
+    "win_both_halves": {"no": 0.004, "yes": 0.996, "confidence": 0.847}
+  }
+}
+```
+
 **Key Changes from v4.0.0:**
 - ✅ Added `score_range` prediction (0-2, 3-5, 6-8, 9+)
 - ✅ Added `double_chance` prediction (1X, X2, 12)
@@ -209,6 +284,52 @@ Content-Type: application/json
 }
 ```
 
+**Actual API Response:**
+```json
+{
+  "predictions": [
+    {
+      "match": "Chelsea vs Club Atlético de Madrid",
+      "league": "FC 26. 5x5 Rush. Superligue",
+      "family": "RUSH",
+      "predictions": {
+        "1x2": {"home": 0.334, "draw": 0.12, "away": 0.547, "confidence": 0.533},
+        "total_goals": {"predicted": 7.5, "platform_value": 7.5, "platform_name": "Total Goals"},
+        "handicap": {"predicted": -4.2, "platform_value": -4.0, "platform_name": "Handicap"},
+        "over_under": {"under": 0.336, "over": 0.664, "confidence": 0.615},
+        "btts": {"no": 0.069, "yes": 0.931, "confidence": 0.801},
+        "parity": {"pair": 0.481, "impair": 0.519, "confidence": 0.513},
+        "score_range": {"0-2": 0.048, "3-5": 0.306, "6-8": 0.322, "9+": 0.324, "confidence": 0.377},
+        "double_chance": {"1x": 0.371, "x2": 0.481, "12": 0.149, "confidence": 0.486},
+        "clean_sheet": {"home_no": 0.941, "home_yes": 0.059, "away_no": 0.829, "away_yes": 0.171, "confidence": 0.7695000000000001},
+        "draw_no_bet": {"home": 0.018, "away": 0.982, "draw": 0.0, "confidence": 0.838},
+        "win_both_halves": {"no": 0.322, "yes": 0.678, "confidence": 0.624}
+      }
+    },
+    {
+      "match": "Real Madrid vs Barcelona",
+      "league": "FC 25. Champions League",
+      "family": "CLASSIC",
+      "predictions": {
+        "1x2": {"home": 0.421, "draw": 0.23, "away": 0.349, "confidence": 0.445},
+        "total_goals": {"predicted": 4.5, "platform_value": 4.5, "platform_name": "Total Goals"},
+        "handicap": {"predicted": 0.6, "platform_value": 0.5, "platform_name": "Handicap"},
+        "over_under": {"under": 0.418, "over": 0.582, "confidence": 0.557},
+        "btts": {"no": 0.401, "yes": 0.599, "confidence": 0.569},
+        "parity": {"pair": 0.496, "impair": 0.504, "confidence": 0.503},
+        "score_range": {"0-2": 0.361, "3-5": 0.519, "6-8": 0.114, "9+": 0.006, "confidence": 0.513},
+        "double_chance": {"1x": 0.402, "x2": 0.403, "12": 0.195, "confidence": 0.432},
+        "clean_sheet": {"home_no": 0.562, "home_yes": 0.438, "away_no": 0.561, "away_yes": 0.439, "confidence": 0.5435000000000001},
+        "draw_no_bet": {"home": 0.618, "away": 0.382, "draw": 0.0, "confidence": 0.582},
+        "win_both_halves": {"no": 0.489, "yes": 0.511, "confidence": 0.508}
+      }
+    }
+  ],
+  "total": 2,
+  "successful": 2
+}
+```
+
 ---
 
 ### 4. Model Info
@@ -253,6 +374,41 @@ GET /model-info
 }
 ```
 
+**Actual API Response:**
+```json
+{
+  "version": "5.0.0",
+  "families": ["PENALTY", "HIGHSCORE", "RUSH", "CLASSIC"],
+  "models": {
+    "PENALTY": {
+      "models": ["1x2", "over_under", "btts", "parity", "score_range", "double_chance", "clean_sheet_home", "clean_sheet_away", "draw_no_bet", "win_both_halves", "total_goals_regressor", "handicap_regressor"],
+      "leagues_count": 5,
+      "leagues_sample": ["FC24. Penalty", "FC25. Penalty", "Penalty", "FIFA23. Penalty", "FC26. Penalty"],
+      "has_regression": true
+    },
+    "HIGHSCORE": {
+      "models": ["1x2", "over_under", "btts", "parity", "score_range", "double_chance", "clean_sheet_home", "clean_sheet_away", "draw_no_bet", "win_both_halves", "total_goals_regressor", "handicap_regressor"],
+      "leagues_count": 2,
+      "leagues_sample": ["FC 25. 3x3. Ligue de conférence", "FC 24. 4x4. Championnat d'Angleterre"],
+      "has_regression": true
+    },
+    "RUSH": {
+      "models": ["1x2", "over_under", "btts", "parity", "score_range", "double_chance", "clean_sheet_home", "clean_sheet_away", "draw_no_bet", "win_both_halves", "total_goals_regressor", "handicap_regressor"],
+      "leagues_count": 1,
+      "leagues_sample": ["FC 26. 5x5 Rush. Superligue"],
+      "has_regression": true
+    },
+    "CLASSIC": {
+      "models": ["1x2", "over_under", "btts", "parity", "score_range", "double_chance", "clean_sheet_home", "clean_sheet_away", "draw_no_bet", "win_both_halves", "total_goals_regressor", "handicap_regressor"],
+      "leagues_count": 9,
+      "leagues_sample": ["FC 25. Champions League", "FC 26. Champions League", "FC 25. Championnat d'Espagne", "FC 25. Championnat d'Angleterre", "FC 25. Ligue européenne"],
+      "has_regression": true
+    }
+  },
+  "cache_enabled": true
+}
+```
+
 ---
 
 ### 5. Team Stats
@@ -283,6 +439,42 @@ GET /team-stats/{team_name}
 }
 ```
 
+**Actual API Response:**
+```json
+{
+  "team": "Chelsea",
+  "total_matches": 170,
+  "leagues": [
+    {"league": "FC24. Penalty", "family": "PENALTY"},
+    {"league": "FC25. Penalty", "family": "PENALTY"},
+    {"league": "Penalty", "family": "PENALTY"},
+    {"league": "FIFA23. Penalty", "family": "PENALTY"},
+    {"league": "FC26. Penalty", "family": "PENALTY"},
+    {"league": "FC 25. 3x3. Ligue de conférence", "family": "HIGHSCORE"},
+    {"league": "FC 24. 4x4. Championnat d'Angleterre", "family": "HIGHSCORE"},
+    {"league": "FC 26. 5x5 Rush. Superligue", "family": "RUSH"},
+    {"league": "FC 25. Champions League", "family": "CLASSIC"},
+    {"league": "FC 26. Champions League", "family": "CLASSIC"},
+    {"league": "FC 25. Championnat d'Espagne", "family": "CLASSIC"},
+    {"league": "FC 25. Championnat d'Angleterre", "family": "CLASSIC"},
+    {"league": "FC 25. Ligue européenne", "family": "CLASSIC"},
+    {"league": "FC 26. Championnat du monde", "family": "CLASSIC"},
+    {"league": "FC 25. Italy Championship", "family": "CLASSIC"},
+    {"league": "FC 25. Championnat d'Allemagne", "family": "CLASSIC"},
+    {"league": "World Cup 2026. Simulation", "family": "CLASSIC"}
+  ],
+  "performance": {
+    "avg_goals_scored": 3.26,
+    "avg_goals_conceded": 3.26,
+    "win_rate": 0.45,
+    "draw_rate": 0.25,
+    "loss_rate": 0.3
+  },
+  "form": ["W", "D", "W", "L", "W"],
+  "note": "Statistiques simulées - nécessite une base de données pour des données réelles"
+}
+```
+
 ---
 
 ### 6. League Stats
@@ -293,6 +485,23 @@ GET /league-stats/{league_name}
 ```
 
 **Response:**
+```json
+{
+  "league": "FC 26. 5x5 Rush. Superligue",
+  "family": "RUSH",
+  "configuration": {
+    "has_draw": true,
+    "avg_goals": 7.52
+  },
+  "teams_count": 20,
+  "total_matches": 100,
+  "goals_per_match": 7.52,
+  "draw_rate": 0.25,
+  "note": "Statistiques basées sur la configuration de la famille"
+}
+```
+
+**Actual API Response:**
 ```json
 {
   "league": "FC 26. 5x5 Rush. Superligue",
@@ -367,6 +576,34 @@ GET /families
 }
 ```
 
+**Actual API Response:**
+```json
+{
+  "families": {
+    "PENALTY": {
+      "leagues": ["FC24. Penalty", "FC25. Penalty", "Penalty", "FIFA23. Penalty", "FC26. Penalty"],
+      "has_draw": true,
+      "avg_goals": 6.52
+    },
+    "HIGHSCORE": {
+      "leagues": ["FC 25. 3x3. Ligue de conférence", "FC 24. 4x4. Championnat d'Angleterre"],
+      "has_draw": true,
+      "avg_goals": 15.16
+    },
+    "RUSH": {
+      "leagues": ["FC 26. 5x5 Rush. Superligue"],
+      "has_draw": true,
+      "avg_goals": 7.52
+    },
+    "CLASSIC": {
+      "leagues": ["FC 25. Champions League", "FC 26. Champions League", "FC 25. Championnat d'Espagne", "FC 25. Championnat d'Angleterre", "FC 25. Ligue européenne", "FC 26. Championnat du monde", "FC 25. Italy Championship", "FC 25. Championnat d'Allemagne", "World Cup 2026. Simulation"],
+      "has_draw": true,
+      "avg_goals": 3.12
+    }
+  }
+}
+```
+
 ---
 
 ### 9. Get Leagues by Family
@@ -389,6 +626,24 @@ GET /leagues/CLASSIC
     "FC 25. Ligue européenne",
     "FC 26. Championnat du monde",
     "FC 26. Champions League",
+    "World Cup 2026. Simulation"
+  ]
+}
+```
+
+**Actual API Response:**
+```json
+{
+  "family": "CLASSIC",
+  "leagues": [
+    "FC 25. Champions League",
+    "FC 26. Champions League",
+    "FC 25. Championnat d'Espagne",
+    "FC 25. Championnat d'Angleterre",
+    "FC 25. Ligue européenne",
+    "FC 26. Championnat du monde",
+    "FC 25. Italy Championship",
+    "FC 25. Championnat d'Allemagne",
     "World Cup 2026. Simulation"
   ]
 }
