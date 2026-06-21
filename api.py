@@ -203,6 +203,9 @@ def predict_with_trainbest_models(team_home, team_away, league, models):
         model_score_range = model_data["models"]["score_range"]
         prob_score_range = model_score_range.predict_proba(X)[0]
         acc_score_range = model_stats.get("score_range_acc", 0.5)
+        # S'assurer que prob_score_range a exactement 4 éléments
+        if len(prob_score_range) != 4:
+            prob_score_range = [0.25, 0.25, 0.25, 0.25]
         confidence_score_range = calculate_confidence(prob_score_range, acc_score_range)
     else:
         prob_score_range = [0.25, 0.25, 0.25, 0.25]
@@ -213,6 +216,9 @@ def predict_with_trainbest_models(team_home, team_away, league, models):
         model_double_chance = model_data["models"]["double_chance"]
         prob_double_chance = model_double_chance.predict_proba(X)[0]
         acc_double_chance = model_stats.get("double_chance_acc", 0.5)
+        # S'assurer que prob_double_chance a exactement 3 éléments
+        if len(prob_double_chance) != 3:
+            prob_double_chance = [0.33, 0.33, 0.34]
         confidence_double_chance = calculate_confidence(prob_double_chance, acc_double_chance)
     else:
         prob_double_chance = [0.33, 0.33, 0.34]
