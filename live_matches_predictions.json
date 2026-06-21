@@ -1,0 +1,28 @@
+[
+  {
+    "match_id": 730300697,
+    "team_home": "Chelsea",
+    "team_away": "Club Atlético de Madrid",
+    "league": "FC 26. 5x5 Rush. Superligue",
+    "family": "RUSH",
+    "current_score": "5-1",
+    "predicted_score": "4-5",
+    "1x2": {
+      "home": 0.324,
+      "draw": 0.159,
+      "away": 0.517
+    },
+    "over_under": {
+      "under": 0.397,
+      "over": 0.603
+    },
+    "btts": {
+      "no": 0.069,
+      "yes": 0.931
+    },
+    "parity": {
+      "pair": 0.481,
+      "impair": 0.519
+    }
+  }
+]

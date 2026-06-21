@@ -1,0 +1,554 @@
+{
+  "PENALTY": {
+    "FC24. Penalty": {
+      "exact_score": "4-3",
+      "lambda_home": 4.43,
+      "lambda_away": 3.48,
+      "total_goals": 7.9,
+      "total_goals_platform": {
+        "value": 7.5,
+        "name": "Total Goals"
+      },
+      "handicap": 0.9,
+      "handicap_platform": {
+        "value": 1.0,
+        "name": "Handicap"
+      },
+      "1x2": {
+        "home": 0.423,
+        "draw": 0.0,
+        "away": 0.577
+      },
+      "over_under": {
+        "under": 0.366,
+        "over": 0.634
+      },
+      "btts": {
+        "no": 0.059,
+        "yes": 0.941
+      },
+      "parity": {
+        "pair": 0.33,
+        "impair": 0.67
+      }
+    },
+    "FC25. Penalty": {
+      "exact_score": "3-2",
+      "lambda_home": 3.81,
+      "lambda_away": 2.93,
+      "total_goals": 6.7,
+      "total_goals_platform": {
+        "value": 6.5,
+        "name": "Total Goals"
+      },
+      "handicap": 0.9,
+      "handicap_platform": {
+        "value": 1.0,
+        "name": "Handicap"
+      },
+      "1x2": {
+        "home": 0.273,
+        "draw": 0.0,
+        "away": 0.727
+      },
+      "over_under": {
+        "under": 0.375,
+        "over": 0.625
+      },
+      "btts": {
+        "no": 0.059,
+        "yes": 0.941
+      },
+      "parity": {
+        "pair": 0.339,
+        "impair": 0.661
+      }
+    },
+    "Penalty": {
+      "exact_score": "3-5",
+      "lambda_home": 3.76,
+      "lambda_away": 5.75,
+      "total_goals": 9.5,
+      "total_goals_platform": {
+        "value": 9.5,
+        "name": "Total Goals"
+      },
+      "handicap": -2.0,
+      "handicap_platform": {
+        "value": -2.0,
+        "name": "Handicap"
+      },
+      "1x2": {
+        "home": 0.425,
+        "draw": 0.0,
+        "away": 0.575
+      },
+      "over_under": {
+        "under": 0.357,
+        "over": 0.643
+      },
+      "btts": {
+        "no": 0.059,
+        "yes": 0.941
+      },
+      "parity": {
+        "pair": 0.33,
+        "impair": 0.67
+      }
+    },
+    "FIFA23. Penalty": {
+      "exact_score": "3-3",
+      "lambda_home": 3.34,
+      "lambda_away": 3.29,
+      "total_goals": 6.6,
+      "total_goals_platform": {
+        "value": 6.5,
+        "name": "Total Goals"
+      },
+      "handicap": 0.0,
+      "handicap_platform": {
+        "value": 0.0,
+        "name": "Handicap"
+      },
+      "1x2": {
+        "home": 0.464,
+        "draw": 0.0,
+        "away": 0.536
+      },
+      "over_under": {
+        "under": 0.368,
+        "over": 0.632
+      },
+      "btts": {
+        "no": 0.059,
+        "yes": 0.941
+      },
+      "parity": {
+        "pair": 0.344,
+        "impair": 0.656
+      }
+    },
+    "FC26. Penalty": {
+      "exact_score": "4-3",
+      "lambda_home": 4.15,
+      "lambda_away": 3.9,
+      "total_goals": 8.0,
+      "total_goals_platform": {
+        "value": 7.5,
+        "name": "Total Goals"
+      },
+      "handicap": 0.2,
+      "handicap_platform": {
+        "value": 0.0,
+        "name": "Handicap"
+      },
+      "1x2": {
+        "home": 0.157,
+        "draw": 0.0,
+        "away": 0.843
+      },
+      "over_under": {
+        "under": 0.375,
+        "over": 0.625
+      },
+      "btts": {
+        "no": 0.061,
+        "yes": 0.939
+      },
+      "parity": {
+        "pair": 0.339,
+        "impair": 0.661
+      }
+    }
+  },
+  "HIGHSCORE": {
+    "FC 25. 3x3. Ligue de conférence": {
+      "exact_score": "7-9",
+      "lambda_home": 7.47,
+      "lambda_away": 9.64,
+      "total_goals": 17.1,
+      "total_goals_platform": {
+        "value": 17.5,
+        "name": "Total Goals"
+      },
+      "handicap": -2.2,
+      "handicap_platform": {
+        "value": -2.0,
+        "name": "Handicap"
+      },
+      "1x2": {
+        "home": 0.346,
+        "draw": 0.177,
+        "away": 0.476
+      },
+      "over_under": {
+        "under": 0.587,
+        "over": 0.413
+      },
+      "btts": {
+        "no": 0.004,
+        "yes": 0.996
+      },
+      "parity": {
+        "pair": 0.481,
+        "impair": 0.519
+      }
+    },
+    "FC 24. 4x4. Championnat d'Angleterre": {
+      "exact_score": "6-7",
+      "lambda_home": 6.39,
+      "lambda_away": 7.72,
+      "total_goals": 14.1,
+      "total_goals_platform": {
+        "value": 14.5,
+        "name": "Total Goals"
+      },
+      "handicap": -1.3,
+      "handicap_platform": {
+        "value": -1.5,
+        "name": "Handicap"
+      },
+      "1x2": {
+        "home": 0.372,
+        "draw": 0.163,
+        "away": 0.465
+      },
+      "over_under": {
+        "under": 0.323,
+        "over": 0.677
+      },
+      "btts": {
+        "no": 0.008,
+        "yes": 0.992
+      },
+      "parity": {
+        "pair": 0.481,
+        "impair": 0.519
+      }
+    }
+  },
+  "RUSH": {
+    "FC 26. 5x5 Rush. Superligue": {
+      "exact_score": "4-5",
+      "lambda_home": 4.08,
+      "lambda_away": 5.24,
+      "total_goals": 9.3,
+      "total_goals_platform": {
+        "value": 9.5,
+        "name": "Total Goals"
+      },
+      "handicap": -1.2,
+      "handicap_platform": {
+        "value": -1.0,
+        "name": "Handicap"
+      },
+      "1x2": {
+        "home": 0.324,
+        "draw": 0.159,
+        "away": 0.517
+      },
+      "over_under": {
+        "under": 0.397,
+        "over": 0.603
+      },
+      "btts": {
+        "no": 0.069,
+        "yes": 0.931
+      },
+      "parity": {
+        "pair": 0.481,
+        "impair": 0.519
+      }
+    }
+  },
+  "CLASSIC": {
+    "FC 25. Champions League": {
+      "exact_score": "3-2",
+      "lambda_home": 3.57,
+      "lambda_away": 2.53,
+      "total_goals": 6.1,
+      "total_goals_platform": {
+        "value": 6.5,
+        "name": "Total Goals"
+      },
+      "handicap": 1.0,
+      "handicap_platform": {
+        "value": 1.0,
+        "name": "Handicap"
+      },
+      "1x2": {
+        "home": 0.353,
+        "draw": 0.335,
+        "away": 0.312
+      },
+      "over_under": {
+        "under": 0.425,
+        "over": 0.575
+      },
+      "btts": {
+        "no": 0.428,
+        "yes": 0.572
+      },
+      "parity": {
+        "pair": 0.479,
+        "impair": 0.521
+      }
+    },
+    "FC 26. Champions League": {
+      "exact_score": "3-1",
+      "lambda_home": 3.12,
+      "lambda_away": 1.8,
+      "total_goals": 4.9,
+      "total_goals_platform": {
+        "value": 4.5,
+        "name": "Total Goals"
+      },
+      "handicap": 1.3,
+      "handicap_platform": {
+        "value": 1.5,
+        "name": "Handicap"
+      },
+      "1x2": {
+        "home": 0.345,
+        "draw": 0.255,
+        "away": 0.4
+      },
+      "over_under": {
+        "under": 0.39,
+        "over": 0.61
+      },
+      "btts": {
+        "no": 0.428,
+        "yes": 0.572
+      },
+      "parity": {
+        "pair": 0.496,
+        "impair": 0.504
+      }
+    },
+    "FC 25. Championnat d'Espagne": {
+      "exact_score": "2-2",
+      "lambda_home": 2.29,
+      "lambda_away": 2.93,
+      "total_goals": 5.2,
+      "total_goals_platform": {
+        "value": 5.5,
+        "name": "Total Goals"
+      },
+      "handicap": -0.6,
+      "handicap_platform": {
+        "value": -0.5,
+        "name": "Handicap"
+      },
+      "1x2": {
+        "home": 0.362,
+        "draw": 0.209,
+        "away": 0.429
+      },
+      "over_under": {
+        "under": 0.447,
+        "over": 0.553
+      },
+      "btts": {
+        "no": 0.428,
+        "yes": 0.572
+      },
+      "parity": {
+        "pair": 0.496,
+        "impair": 0.504
+      }
+    },
+    "FC 25. Championnat d'Angleterre": {
+      "exact_score": "2-2",
+      "lambda_home": 2.48,
+      "lambda_away": 2.56,
+      "total_goals": 5.0,
+      "total_goals_platform": {
+        "value": 4.5,
+        "name": "Total Goals"
+      },
+      "handicap": -0.1,
+      "handicap_platform": {
+        "value": 0.0,
+        "name": "Handicap"
+      },
+      "1x2": {
+        "home": 0.536,
+        "draw": 0.192,
+        "away": 0.271
+      },
+      "over_under": {
+        "under": 0.391,
+        "over": 0.609
+      },
+      "btts": {
+        "no": 0.416,
+        "yes": 0.584
+      },
+      "parity": {
+        "pair": 0.494,
+        "impair": 0.506
+      }
+    },
+    "FC 25. Ligue européenne": {
+      "exact_score": "3-2",
+      "lambda_home": 3.01,
+      "lambda_away": 2.47,
+      "total_goals": 5.5,
+      "total_goals_platform": {
+        "value": 5.5,
+        "name": "Total Goals"
+      },
+      "handicap": 0.5,
+      "handicap_platform": {
+        "value": 0.5,
+        "name": "Handicap"
+      },
+      "1x2": {
+        "home": 0.468,
+        "draw": 0.255,
+        "away": 0.278
+      },
+      "over_under": {
+        "under": 0.39,
+        "over": 0.61
+      },
+      "btts": {
+        "no": 0.428,
+        "yes": 0.572
+      },
+      "parity": {
+        "pair": 0.479,
+        "impair": 0.521
+      }
+    },
+    "FC 26. Championnat du monde": {
+      "exact_score": "2-2",
+      "lambda_home": 2.38,
+      "lambda_away": 2.57,
+      "total_goals": 5.0,
+      "total_goals_platform": {
+        "value": 4.5,
+        "name": "Total Goals"
+      },
+      "handicap": -0.2,
+      "handicap_platform": {
+        "value": 0.0,
+        "name": "Handicap"
+      },
+      "1x2": {
+        "home": 0.393,
+        "draw": 0.181,
+        "away": 0.426
+      },
+      "over_under": {
+        "under": 0.395,
+        "over": 0.605
+      },
+      "btts": {
+        "no": 0.437,
+        "yes": 0.563
+      },
+      "parity": {
+        "pair": 0.496,
+        "impair": 0.504
+      }
+    },
+    "FC 25. Italy Championship": {
+      "exact_score": "3-1",
+      "lambda_home": 3.52,
+      "lambda_away": 1.62,
+      "total_goals": 5.1,
+      "total_goals_platform": {
+        "value": 5.5,
+        "name": "Total Goals"
+      },
+      "handicap": 1.9,
+      "handicap_platform": {
+        "value": 2.0,
+        "name": "Handicap"
+      },
+      "1x2": {
+        "home": 0.398,
+        "draw": 0.232,
+        "away": 0.37
+      },
+      "over_under": {
+        "under": 0.395,
+        "over": 0.605
+      },
+      "btts": {
+        "no": 0.437,
+        "yes": 0.563
+      },
+      "parity": {
+        "pair": 0.496,
+        "impair": 0.504
+      }
+    },
+    "FC 25. Championnat d'Allemagne": {
+      "exact_score": "2-3",
+      "lambda_home": 2.09,
+      "lambda_away": 3.15,
+      "total_goals": 5.2,
+      "total_goals_platform": {
+        "value": 5.5,
+        "name": "Total Goals"
+      },
+      "handicap": -1.1,
+      "handicap_platform": {
+        "value": -1.0,
+        "name": "Handicap"
+      },
+      "1x2": {
+        "home": 0.398,
+        "draw": 0.203,
+        "away": 0.399
+      },
+      "over_under": {
+        "under": 0.425,
+        "over": 0.575
+      },
+      "btts": {
+        "no": 0.428,
+        "yes": 0.572
+      },
+      "parity": {
+        "pair": 0.494,
+        "impair": 0.506
+      }
+    },
+    "World Cup 2026. Simulation": {
+      "exact_score": "2-0",
+      "lambda_home": 2.2,
+      "lambda_away": 0.81,
+      "total_goals": 3.0,
+      "total_goals_platform": {
+        "value": 2.5,
+        "name": "Total Goals"
+      },
+      "handicap": 1.4,
+      "handicap_platform": {
+        "value": 1.5,
+        "name": "Handicap"
+      },
+      "1x2": {
+        "home": 0.398,
+        "draw": 0.201,
+        "away": 0.401
+      },
+      "over_under": {
+        "under": 0.391,
+        "over": 0.609
+      },
+      "btts": {
+        "no": 0.406,
+        "yes": 0.594
+      },
+      "parity": {
+        "pair": 0.503,
+        "impair": 0.497
+      }
+    }
+  }
+}
