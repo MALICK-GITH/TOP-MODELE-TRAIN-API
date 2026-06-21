@@ -2,8 +2,8 @@
 
 **Production URL:** `https://top-modele-train-api-vmp.onrender.com`
 
-**Version:** 4.0.0  
-**Last Updated:** 2026-06-19
+**Version:** 5.0.0  
+**Last Updated:** 2026-06-21
 
 ---
 
@@ -44,7 +44,7 @@ GET /health
 ---
 
 ### 2. Predict Match
-Get prediction for a FIFA match with platform-specific option mapping (exact score removed).
+Get prediction for a FIFA match with platform-specific option mapping and confidence scores.
 
 ```http
 POST /predict
@@ -56,7 +56,7 @@ Content-Type: application/json
 {
   "team_home": "Chelsea",
   "team_away": "Club Atlético de Madrid",
-  "league": "FC 26. 5x5 Rush. Superleague"
+  "league": "FC 26. 5x5 Rush. Superligue"
 }
 ```
 
@@ -70,7 +70,8 @@ Content-Type: application/json
     "1x2": {
       "home": 0.334,
       "draw": 0.120,
-      "away": 0.547
+      "away": 0.547,
+      "confidence": 0.533
     },
     "total_goals": {
       "predicted": 7.5,
@@ -78,31 +79,68 @@ Content-Type: application/json
       "platform_name": "Total Goals"
     },
     "handicap": {
-      "predicted": 0.0,
-      "platform_value": 0.0,
+      "predicted": -4.2,
+      "platform_value": -4.0,
       "platform_name": "Handicap"
     },
     "over_under": {
       "under": 0.336,
-      "over": 0.664
+      "over": 0.664,
+      "confidence": 0.615
     },
     "btts": {
       "no": 0.069,
-      "yes": 0.931
+      "yes": 0.931,
+      "confidence": 0.801
     },
     "parity": {
       "pair": 0.481,
-      "impair": 0.519
+      "impair": 0.519,
+      "confidence": 0.513
+    },
+    "score_range": {
+      "0-2": 0.048,
+      "3-5": 0.306,
+      "6-8": 0.322,
+      "9+": 0.324,
+      "confidence": 0.377
+    },
+    "double_chance": {
+      "1x": 0.371,
+      "x2": 0.481,
+      "12": 0.149,
+      "confidence": 0.486
+    },
+    "clean_sheet": {
+      "home_no": 0.941,
+      "home_yes": 0.059,
+      "away_no": 0.829,
+      "away_yes": 0.171,
+      "confidence": 0.769
+    },
+    "draw_no_bet": {
+      "home": 0.018,
+      "away": 0.982,
+      "draw": 0.0,
+      "confidence": 0.838
+    },
+    "win_both_halves": {
+      "no": 0.322,
+      "yes": 0.678,
+      "confidence": 0.624
     }
   }
 }
 ```
 
-**Key Changes from v3.0.0:**
-- ❌ Removed `exact_score` field (no longer predicted)
-- ❌ Removed `meta` section (lambda values no longer used)
-- ✅ Total Goals and Handicap use family-specific default values
-- ✅ Predictions are now based solely on 1X2, Over/Under, BTTS, and Parity models
+**Key Changes from v4.0.0:**
+- ✅ Added `score_range` prediction (0-2, 3-5, 6-8, 9+)
+- ✅ Added `double_chance` prediction (1X, X2, 12)
+- ✅ Added `clean_sheet` prediction (Home/Away)
+- ✅ Added `draw_no_bet` prediction (Home/Away/Draw)
+- ✅ Added `win_both_halves` prediction (Yes/No)
+- ✅ Added `confidence` scores for all predictions (0.0-1.0)
+- ✅ Total Goals and Handicap now use regression models instead of default values
 
 ---
 
@@ -123,7 +161,174 @@ POST /clear-cache
 
 ---
 
-### 6. Get Families
+### 3. Batch Predict
+Get predictions for multiple matches in a single request.
+
+```http
+POST /batch-predict
+Content-Type: application/json
+```
+
+**Request Body:**
+```json
+{
+  "matches": [
+    {
+      "team_home": "Chelsea",
+      "team_away": "Club Atlético de Madrid",
+      "league": "FC 26. 5x5 Rush. Superligue"
+    },
+    {
+      "team_home": "Real Madrid",
+      "team_away": "Barcelona",
+      "league": "FC 25. Champions League"
+    }
+  ]
+}
+```
+
+**Response:**
+```json
+{
+  "total": 2,
+  "successful": 2,
+  "predictions": [
+    {
+      "match": "Chelsea vs Club Atlético de Madrid",
+      "league": "FC 26. 5x5 Rush. Superligue",
+      "family": "RUSH",
+      "predictions": { ... }
+    },
+    {
+      "match": "Real Madrid vs Barcelona",
+      "league": "FC 25. Champions League",
+      "family": "CLASSIC",
+      "predictions": { ... }
+    }
+  ]
+}
+```
+
+---
+
+### 4. Model Info
+Get metadata about the loaded models.
+
+```http
+GET /model-info
+```
+
+**Response:**
+```json
+{
+  "version": "5.0.0",
+  "families": ["PENALTY", "HIGHSCORE", "RUSH", "CLASSIC"],
+  "models": {
+    "PENALTY": {
+      "models": ["1x2", "over_under", "btts", "parity", "score_range", "double_chance", "clean_sheet_home", "clean_sheet_away", "total_goals_regressor", "handicap_regressor"],
+      "leagues_count": 5,
+      "leagues_sample": ["FC24. Penalty", "FC25. Penalty", "Penalty", "FIFA23. Penalty", "FC26. Penalty"],
+      "has_regression": true
+    },
+    "HIGHSCORE": {
+      "models": ["1x2", "over_under", "btts", "parity", "score_range", "double_chance", "clean_sheet_home", "clean_sheet_away", "total_goals_regressor", "handicap_regressor"],
+      "leagues_count": 2,
+      "leagues_sample": ["FC 25. 3x3. Ligue de conférence", "FC 24. 4x4. Championnat d'Angleterre"],
+      "has_regression": true
+    },
+    "RUSH": {
+      "models": ["1x2", "over_under", "btts", "parity", "score_range", "double_chance", "clean_sheet_home", "clean_sheet_away", "total_goals_regressor", "handicap_regressor"],
+      "leagues_count": 1,
+      "leagues_sample": ["FC 26. 5x5 Rush. Superligue"],
+      "has_regression": true
+    },
+    "CLASSIC": {
+      "models": ["1x2", "over_under", "btts", "parity", "score_range", "double_chance", "clean_sheet_home", "clean_sheet_away", "total_goals_regressor", "handicap_regressor"],
+      "leagues_count": 9,
+      "leagues_sample": ["FC 25. Champions League", "FC 26. Champions League", "FC 25. Championnat d'Espagne", "FC 25. Championnat d'Angleterre", "FC 25. Ligue européenne"],
+      "has_regression": true
+    }
+  },
+  "cache_enabled": true
+}
+```
+
+---
+
+### 5. Team Stats
+Get statistics for a specific team.
+
+```http
+GET /team-stats/{team_name}
+```
+
+**Response:**
+```json
+{
+  "team": "Chelsea",
+  "total_matches": 170,
+  "leagues": [
+    {"league": "FC24. Penalty", "family": "PENALTY"},
+    {"league": "FC 25. Champions League", "family": "CLASSIC"}
+  ],
+  "performance": {
+    "avg_goals_scored": 3.26,
+    "avg_goals_conceded": 3.26,
+    "win_rate": 0.45,
+    "draw_rate": 0.25,
+    "loss_rate": 0.30
+  },
+  "form": ["W", "D", "W", "L", "W"],
+  "note": "Statistiques simulées - nécessite une base de données pour des données réelles"
+}
+```
+
+---
+
+### 6. League Stats
+Get statistics for a specific league.
+
+```http
+GET /league-stats/{league_name}
+```
+
+**Response:**
+```json
+{
+  "league": "FC 26. 5x5 Rush. Superligue",
+  "family": "RUSH",
+  "configuration": {
+    "has_draw": true,
+    "avg_goals": 7.52
+  },
+  "teams_count": 20,
+  "total_matches": 100,
+  "goals_per_match": 7.52,
+  "draw_rate": 0.25,
+  "note": "Statistiques basées sur la configuration de la famille"
+}
+```
+
+---
+
+### 7. Clear Cache
+Clear prediction cache to force recomputation.
+
+```http
+POST /clear-cache
+```
+
+**Response:**
+```json
+{
+  "status": "success",
+  "message": "Cache nettoyé"
+}
+```
+
+---
+
+### 8. Get Families
 List all available families with configurations.
 
 ```http
@@ -164,7 +369,7 @@ GET /families
 
 ---
 
-### 7. Get Leagues by Family
+### 9. Get Leagues by Family
 List all leagues for a specific family.
 
 ```http
@@ -318,22 +523,36 @@ The API maps continuous model predictions to discrete platform-specific options 
 ## 🔒 Prediction Models
 
 ### Overview
-The API uses machine learning models for prediction without exact score calculation.
+The API uses machine learning models for prediction with confidence scores.
 
 ### Available Models
 1. **1X2 (Result)**: GradientBoostingClassifier - predicts Home/Draw/Away
 2. **Over/Under**: GradientBoostingClassifier - predicts Over/Under based on family-specific thresholds
 3. **BTTS (Both Teams To Score)**: RandomForestClassifier - predicts Yes/No
 4. **Parity (Odd/Even)**: RandomForestClassifier - predicts Pair/Impair
+5. **Score Range**: GradientBoostingClassifier - predicts 0-2, 3-5, 6-8, 9+
+6. **Double Chance**: GradientBoostingClassifier - predicts 1X, X2, 12
+7. **Clean Sheet Home**: RandomForestClassifier - predicts Home No/Yes
+8. **Clean Sheet Away**: RandomForestClassifier - predicts Away No/Yes
+9. **Draw No Bet**: GradientBoostingClassifier - predicts Home/Away/Draw
+10. **Win Both Halves**: RandomForestClassifier - predicts Yes/No
+11. **Total Goals (Regression)**: GradientBoostingRegressor - predicts continuous total goals
+12. **Handicap (Regression)**: GradientBoostingRegressor - predicts continuous handicap
+
+### Confidence Scores
+All predictions include a confidence score (0.0-1.0) calculated based on:
+- Prediction certainty (maximum probability)
+- Model accuracy from training
+- Higher confidence = more reliable prediction
 
 ### Total Goals and Handicap
-Total Goals and Handicap use family-specific default values:
-- **PENALTY**: total_goals=6.5, handicap=0.0
-- **HIGHSCORE**: total_goals=15.0, handicap=0.0
-- **RUSH**: total_goals=7.5, handicap=0.0
-- **CLASSIC**: total_goals=3.1, handicap=0.0
+Total Goals and Handicap now use regression models for more accurate predictions:
+- **PENALTY**: Trained on penalty shootout data
+- **HIGHSCORE**: Trained on 3x3/4x4 format data
+- **RUSH**: Trained on 5x5 Rush format data
+- **CLASSIC**: Trained on classic championship data
 
-These values are then mapped to platform-specific options using the platform options mapping.
+These predictions are then mapped to platform-specific options using the platform options mapping.
 
 ---
 
@@ -350,7 +569,7 @@ BASE_URL = "https://top-modele-train-api-vmp.onrender.com"
 response = requests.post(f"{BASE_URL}/predict", json={
     "team_home": "Chelsea",
     "team_away": "Club Atlético de Madrid",
-    "league": "FC 26. 5x5 Rush. Superleague"
+    "league": "FC 26. 5x5 Rush. Superligue"
 })
 prediction = response.json()
 
@@ -361,6 +580,12 @@ print(f"Total Goals: {prediction['predictions']['total_goals']['predicted']}")
 print(f"Platform Value: {prediction['predictions']['total_goals']['platform_value']}")
 print(f"Handicap: {prediction['predictions']['handicap']['predicted']}")
 print(f"1X2: Home={prediction['predictions']['1x2']['home']}, Draw={prediction['predictions']['1x2']['draw']}, Away={prediction['predictions']['1x2']['away']}")
+print(f"1X2 Confidence: {prediction['predictions']['1x2']['confidence']}")
+print(f"Score Range: 0-2={prediction['predictions']['score_range']['0-2']}, 3-5={prediction['predictions']['score_range']['3-5']}")
+print(f"Double Chance: 1X={prediction['predictions']['double_chance']['1x']}, X2={prediction['predictions']['double_chance']['x2']}")
+print(f"Clean Sheet: Home No={prediction['predictions']['clean_sheet']['home_no']}, Away No={prediction['predictions']['clean_sheet']['away_no']}")
+print(f"Draw No Bet: Home={prediction['predictions']['draw_no_bet']['home']}, Away={prediction['predictions']['draw_no_bet']['away']}")
+print(f"Win Both Halves: Yes={prediction['predictions']['win_both_halves']['yes']}")
 ```
 
 ### JavaScript/Node.js
@@ -386,7 +611,7 @@ async function getPrediction(teamHome, teamAway, league) {
 const prediction = await getPrediction(
   "Chelsea",
   "Club Atlético de Madrid",
-  "FC 26. 5x5 Rush. Superleague"
+  "FC 26. 5x5 Rush. Superligue"
 );
 
 console.log(`Match: ${prediction.match}`);
@@ -395,6 +620,12 @@ console.log(`Total Goals: ${prediction.predictions.total_goals.predicted}`);
 console.log(`Platform Value: ${prediction.predictions.total_goals.platform_value}`);
 console.log(`Handicap: ${prediction.predictions.handicap.predicted}`);
 console.log(`1X2: Home=${prediction.predictions['1x2'].home}, Draw=${prediction.predictions['1x2'].draw}, Away=${prediction.predictions['1x2'].away}`);
+console.log(`1X2 Confidence: ${prediction.predictions['1x2'].confidence}`);
+console.log(`Score Range: 0-2=${prediction.predictions.score_range['0-2']}, 3-5=${prediction.predictions.score_range['3-5']}`);
+console.log(`Double Chance: 1X=${prediction.predictions.double_chance['1x']}, X2=${prediction.predictions.double_chance['x2']}`);
+console.log(`Clean Sheet: Home No=${prediction.predictions.clean_sheet.home_no}, Away No=${prediction.predictions.clean_sheet.away_no}`);
+console.log(`Draw No Bet: Home=${prediction.predictions.draw_no_bet.home}, Away=${prediction.predictions.draw_no_bet.away}`);
+console.log(`Win Both Halves: Yes=${prediction.predictions.win_both_halves.yes}`);
 ```
 
 ### cURL
@@ -479,7 +710,7 @@ If not configured, the API works without cache.
 For integration support or questions:
 - **Production URL:** https://top-modele-train-api-vmp.onrender.com
 - **Documentation:** This file
-- **Version:** 4.0.0
+- **Version:** 5.0.0
 
 ---
 
@@ -489,18 +720,23 @@ This API is developed by SOLITAIRE HACK.
 
 ---
 
-## 🔄 Migration Guide (v3.0.0 → v4.0.0)
+## 🔄 Migration Guide (v4.0.0 → v5.0.0)
 
 ### Breaking Changes
 
 #### 1. Response Structure Changes
-**Removed Fields:**
-- `exact_score` field (no longer predicted)
-- `meta` section (lambda values no longer used)
+**New Fields:**
+- `score_range` prediction (0-2, 3-5, 6-8, 9+)
+- `double_chance` prediction (1X, X2, 12)
+- `clean_sheet` prediction (Home/Away)
+- `draw_no_bet` prediction (Home/Away/Draw)
+- `win_both_halves` prediction (Yes/No)
+- `confidence` scores for all predictions (0.0-1.0)
 
 **Modified Fields:**
-- `total_goals.predicted` now uses family-specific default values instead of dynamic Poisson calculation
-- `handicap.predicted` now uses family-specific default values instead of dynamic Poisson calculation
+- All prediction fields now include a `confidence` score
+- `total_goals.predicted` now uses regression models instead of default values
+- `handicap.predicted` now uses regression models instead of default values
 
 **Unchanged Fields:**
 - `1x2` (still predicted by GradientBoostingClassifier)
@@ -510,56 +746,67 @@ This API is developed by SOLITAIRE HACK.
 - `platform_value` and `platform_name` (still mapped to platform-specific options)
 
 #### 2. Model Changes
-**Removed Models:**
-- `poisson_lambda_home` (GradientBoostingRegressor for exact score)
-- `poisson_lambda_away` (GradientBoostingRegressor for exact score)
+**New Models:**
+- `score_range` (GradientBoostingClassifier)
+- `double_chance` (GradientBoostingClassifier)
+- `clean_sheet_home` (RandomForestClassifier)
+- `clean_sheet_away` (RandomForestClassifier)
+- `draw_no_bet` (GradientBoostingClassifier)
+- `win_both_halves` (RandomForestClassifier)
+- `total_goals_regressor` (GradientBoostingRegressor)
+- `handicap_regressor` (GradientBoostingRegressor)
 
-**Remaining Models:**
+**Existing Models:**
 - `1x2` (GradientBoostingClassifier)
 - `over_under` (GradientBoostingClassifier)
 - `btts` (RandomForestClassifier)
 - `parity` (RandomForestClassifier)
 
 #### 3. New Behavior
-- Total Goals and Handicap now use family-specific default values:
-  - PENALTY: total_goals=6.5, handicap=0.0
-  - HIGHSCORE: total_goals=15.0, handicap=0.0
-  - RUSH: total_goals=7.5, handicap=0.0
-  - CLASSIC: total_goals=3.1, handicap=0.0
+- Total Goals and Handicap now use regression models for more accurate predictions
+- All predictions include confidence scores (0.0-1.0)
+- New endpoints available: `/batch-predict`, `/model-info`, `/team-stats`, `/league-stats`
 
 ### Migration Steps
 
 1. **Update response parsing:**
 ```python
-# Old (v3.0.0)
-exact_score = prediction['predictions']['exact_score']['prediction']
-lambda_home = prediction['meta']['lambda_home']
-lambda_away = prediction['meta']['lambda_away']
+# Old (v4.0.0)
+total_goals = prediction['predictions']['total_goals']['predicted']
 
-# New (v4.0.0)
-# Remove exact_score and meta references
-# They are no longer available
+# New (v5.0.0)
+total_goals = prediction['predictions']['total_goals']['predicted']
+confidence = prediction['predictions']['total_goals']['confidence']  # Note: regression models don't have confidence
+score_range = prediction['predictions']['score_range']
+double_chance = prediction['predictions']['double_chance']
+clean_sheet = prediction['predictions']['clean_sheet']
+draw_no_bet = prediction['predictions']['draw_no_bet']
+win_both_halves = prediction['predictions']['win_both_halves']
 ```
 
 2. **Update prediction logic:**
 ```python
-# Old (v3.0.0)
-# Used dynamic Poisson lambdas for exact score
+# Old (v4.0.0)
+# Used family-specific default values for Total Goals and Handicap
 
-# New (v4.0.0)
-# Exact score is no longer predicted
-# Use 1X2, Over/Under, BTTS, and Parity for predictions
+# New (v5.0.0)
+# Uses regression models for more accurate Total Goals and Handicap predictions
+# All predictions include confidence scores
 ```
 
 3. **Update UI:**
 ```python
-# Remove exact score display from your UI
-# Remove lambda values display from your UI
-# Keep 1X2, Over/Under, BTTS, Parity, Total Goals, Handicap
+# Add new prediction displays to your UI:
+# - Score Range (0-2, 3-5, 6-8, 9+)
+# - Double Chance (1X, X2, 12)
+# - Clean Sheet (Home/Away)
+# - Draw No Bet (Home/Away/Draw)
+# - Win Both Halves (Yes/No)
+# - Confidence scores for all predictions
 ```
 
 ---
 
-**Last Updated:** 2026-06-19  
-**API Version:** 4.0.0  
+**Last Updated:** 2026-06-21  
+**API Version:** 5.0.0  
 **Status:** Production ✅
