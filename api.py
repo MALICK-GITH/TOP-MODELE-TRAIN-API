@@ -199,28 +199,36 @@ def predict_with_trainbest_models(team_home, team_away, league, models):
     confidence_parity = calculate_confidence(prob_parity, acc_parity)
     
     # Prédire Score Range
-    if "score_range" in model_data["models"]:
-        model_score_range = model_data["models"]["score_range"]
-        prob_score_range = model_score_range.predict_proba(X)[0]
-        acc_score_range = model_stats.get("score_range_acc", 0.5)
-        # S'assurer que prob_score_range a exactement 4 éléments
-        if len(prob_score_range) != 4:
+    try:
+        if "score_range" in model_data["models"]:
+            model_score_range = model_data["models"]["score_range"]
+            prob_score_range = model_score_range.predict_proba(X)[0]
+            acc_score_range = model_stats.get("score_range_acc", 0.5)
+            # S'assurer que prob_score_range a exactement 4 éléments
+            if len(prob_score_range) != 4:
+                prob_score_range = [0.25, 0.25, 0.25, 0.25]
+            confidence_score_range = calculate_confidence(prob_score_range, acc_score_range)
+        else:
             prob_score_range = [0.25, 0.25, 0.25, 0.25]
-        confidence_score_range = calculate_confidence(prob_score_range, acc_score_range)
-    else:
+            confidence_score_range = 0.5
+    except Exception as e:
         prob_score_range = [0.25, 0.25, 0.25, 0.25]
         confidence_score_range = 0.5
     
     # Prédire Double Chance
-    if "double_chance" in model_data["models"]:
-        model_double_chance = model_data["models"]["double_chance"]
-        prob_double_chance = model_double_chance.predict_proba(X)[0]
-        acc_double_chance = model_stats.get("double_chance_acc", 0.5)
-        # S'assurer que prob_double_chance a exactement 3 éléments
-        if len(prob_double_chance) != 3:
+    try:
+        if "double_chance" in model_data["models"]:
+            model_double_chance = model_data["models"]["double_chance"]
+            prob_double_chance = model_double_chance.predict_proba(X)[0]
+            acc_double_chance = model_stats.get("double_chance_acc", 0.5)
+            # S'assurer que prob_double_chance a exactement 3 éléments
+            if len(prob_double_chance) != 3:
+                prob_double_chance = [0.33, 0.33, 0.34]
+            confidence_double_chance = calculate_confidence(prob_double_chance, acc_double_chance)
+        else:
             prob_double_chance = [0.33, 0.33, 0.34]
-        confidence_double_chance = calculate_confidence(prob_double_chance, acc_double_chance)
-    else:
+            confidence_double_chance = 0.5
+    except Exception as e:
         prob_double_chance = [0.33, 0.33, 0.34]
         confidence_double_chance = 0.5
     
@@ -245,33 +253,44 @@ def predict_with_trainbest_models(team_home, team_away, league, models):
         confidence_clean_sheet_away = 0.5
     
     # Prédire Draw No Bet
-    if "draw_no_bet" in model_data["models"]:
-        model_draw_no_bet = model_data["models"]["draw_no_bet"]
-        prob_draw_no_bet = model_draw_no_bet.predict_proba(X)[0]
-        acc_draw_no_bet = model_stats.get("draw_no_bet_acc", 0.5)
-        # Gérer le cas où le modèle n'a que 2 classes (home/away sans draw)
-        if len(prob_draw_no_bet) == 2:
-            # Ajouter une probabilité de draw simulée
-            prob_draw_no_bet = [prob_draw_no_bet[0], prob_draw_no_bet[1], 0.0]
-        # S'assurer que prob_draw_no_bet a exactement 3 éléments
-        elif len(prob_draw_no_bet) == 3:
-            # Le modèle a déjà 3 classes, utiliser tel quel
-            pass
+    try:
+        if "draw_no_bet" in model_data["models"]:
+            model_draw_no_bet = model_data["models"]["draw_no_bet"]
+            prob_draw_no_bet = model_draw_no_bet.predict_proba(X)[0]
+            acc_draw_no_bet = model_stats.get("draw_no_bet_acc", 0.5)
+            # Gérer le cas où le modèle n'a que 2 classes (home/away sans draw)
+            if len(prob_draw_no_bet) == 2:
+                # Ajouter une probabilité de draw simulée
+                prob_draw_no_bet = [prob_draw_no_bet[0], prob_draw_no_bet[1], 0.0]
+            # S'assurer que prob_draw_no_bet a exactement 3 éléments
+            elif len(prob_draw_no_bet) == 3:
+                # Le modèle a déjà 3 classes, utiliser tel quel
+                pass
+            else:
+                # Cas inattendu, utiliser des valeurs par défaut
+                prob_draw_no_bet = [0.33, 0.33, 0.34]
+            confidence_draw_no_bet = calculate_confidence(prob_draw_no_bet, acc_draw_no_bet)
         else:
-            # Cas inattendu, utiliser des valeurs par défaut
             prob_draw_no_bet = [0.33, 0.33, 0.34]
-        confidence_draw_no_bet = calculate_confidence(prob_draw_no_bet, acc_draw_no_bet)
-    else:
+            confidence_draw_no_bet = 0.5
+    except Exception as e:
         prob_draw_no_bet = [0.33, 0.33, 0.34]
         confidence_draw_no_bet = 0.5
     
     # Prédire Win Both Halves
-    if "win_both_halves" in model_data["models"]:
-        model_win_both_halves = model_data["models"]["win_both_halves"]
-        prob_win_both_halves = model_win_both_halves.predict_proba(X)[0]
-        acc_win_both_halves = model_stats.get("win_both_halves_acc", 0.5)
-        confidence_win_both_halves = calculate_confidence(prob_win_both_halves, acc_win_both_halves)
-    else:
+    try:
+        if "win_both_halves" in model_data["models"]:
+            model_win_both_halves = model_data["models"]["win_both_halves"]
+            prob_win_both_halves = model_win_both_halves.predict_proba(X)[0]
+            acc_win_both_halves = model_stats.get("win_both_halves_acc", 0.5)
+            # S'assurer que prob_win_both_halves a exactement 2 éléments
+            if len(prob_win_both_halves) != 2:
+                prob_win_both_halves = [0.5, 0.5]
+            confidence_win_both_halves = calculate_confidence(prob_win_both_halves, acc_win_both_halves)
+        else:
+            prob_win_both_halves = [0.5, 0.5]
+            confidence_win_both_halves = 0.5
+    except Exception as e:
         prob_win_both_halves = [0.5, 0.5]
         confidence_win_both_halves = 0.5
     
