@@ -243,6 +243,10 @@ def predict_with_trainbest_models(team_home, team_away, league, models):
         model_draw_no_bet = model_data["models"]["draw_no_bet"]
         prob_draw_no_bet = model_draw_no_bet.predict_proba(X)[0]
         acc_draw_no_bet = model_stats.get("draw_no_bet_acc", 0.5)
+        # Gérer le cas où le modèle n'a que 2 classes (home/away sans draw)
+        if len(prob_draw_no_bet) == 2:
+            # Ajouter une probabilité de draw simulée
+            prob_draw_no_bet = [prob_draw_no_bet[0], prob_draw_no_bet[1], 0.0]
         confidence_draw_no_bet = calculate_confidence(prob_draw_no_bet, acc_draw_no_bet)
     else:
         prob_draw_no_bet = [0.33, 0.33, 0.34]
