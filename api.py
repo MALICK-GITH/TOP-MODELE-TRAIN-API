@@ -247,6 +247,13 @@ def predict_with_trainbest_models(team_home, team_away, league, models):
         if len(prob_draw_no_bet) == 2:
             # Ajouter une probabilité de draw simulée
             prob_draw_no_bet = [prob_draw_no_bet[0], prob_draw_no_bet[1], 0.0]
+        # S'assurer que prob_draw_no_bet a exactement 3 éléments
+        elif len(prob_draw_no_bet) == 3:
+            # Le modèle a déjà 3 classes, utiliser tel quel
+            pass
+        else:
+            # Cas inattendu, utiliser des valeurs par défaut
+            prob_draw_no_bet = [0.33, 0.33, 0.34]
         confidence_draw_no_bet = calculate_confidence(prob_draw_no_bet, acc_draw_no_bet)
     else:
         prob_draw_no_bet = [0.33, 0.33, 0.34]
