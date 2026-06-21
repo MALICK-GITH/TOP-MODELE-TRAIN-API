@@ -175,28 +175,56 @@ def predict_with_trainbest_models(team_home, team_away, league, models):
     X = pd.DataFrame([features])
     
     # Prédire 1X2
-    model_1x2 = model_data["models"]["1x2"]
-    prob_1x2 = model_1x2.predict_proba(X)[0]
-    acc_1x2 = model_stats.get("1x2_acc", 0.5)
-    confidence_1x2 = calculate_confidence(prob_1x2, acc_1x2)
+    try:
+        model_1x2 = model_data["models"]["1x2"]
+        prob_1x2 = model_1x2.predict_proba(X)[0]
+        acc_1x2 = model_stats.get("1x2_acc", 0.5)
+        # S'assurer que prob_1x2 a exactement 3 éléments
+        if len(prob_1x2) != 3:
+            prob_1x2 = [0.33, 0.33, 0.34]
+        confidence_1x2 = calculate_confidence(prob_1x2, acc_1x2)
+    except Exception as e:
+        prob_1x2 = [0.33, 0.33, 0.34]
+        confidence_1x2 = 0.5
     
     # Prédire Over/Under
-    model_ou = model_data["models"]["over_under"]
-    prob_ou = model_ou.predict_proba(X)[0]
-    acc_ou = model_stats.get("over_under_acc", 0.5)
-    confidence_ou = calculate_confidence(prob_ou, acc_ou)
+    try:
+        model_ou = model_data["models"]["over_under"]
+        prob_ou = model_ou.predict_proba(X)[0]
+        acc_ou = model_stats.get("over_under_acc", 0.5)
+        # S'assurer que prob_ou a exactement 2 éléments
+        if len(prob_ou) != 2:
+            prob_ou = [0.5, 0.5]
+        confidence_ou = calculate_confidence(prob_ou, acc_ou)
+    except Exception as e:
+        prob_ou = [0.5, 0.5]
+        confidence_ou = 0.5
     
     # Prédire BTTS
-    model_btts = model_data["models"]["btts"]
-    prob_btts = model_btts.predict_proba(X)[0]
-    acc_btts = model_stats.get("btts_acc", 0.5)
-    confidence_btts = calculate_confidence(prob_btts, acc_btts)
+    try:
+        model_btts = model_data["models"]["btts"]
+        prob_btts = model_btts.predict_proba(X)[0]
+        acc_btts = model_stats.get("btts_acc", 0.5)
+        # S'assurer que prob_btts a exactement 2 éléments
+        if len(prob_btts) != 2:
+            prob_btts = [0.5, 0.5]
+        confidence_btts = calculate_confidence(prob_btts, acc_btts)
+    except Exception as e:
+        prob_btts = [0.5, 0.5]
+        confidence_btts = 0.5
     
     # Prédire Parité
-    model_parity = model_data["models"]["parity"]
-    prob_parity = model_parity.predict_proba(X)[0]
-    acc_parity = model_stats.get("parity_acc", 0.5)
-    confidence_parity = calculate_confidence(prob_parity, acc_parity)
+    try:
+        model_parity = model_data["models"]["parity"]
+        prob_parity = model_parity.predict_proba(X)[0]
+        acc_parity = model_stats.get("parity_acc", 0.5)
+        # S'assurer que prob_parity a exactement 2 éléments
+        if len(prob_parity) != 2:
+            prob_parity = [0.5, 0.5]
+        confidence_parity = calculate_confidence(prob_parity, acc_parity)
+    except Exception as e:
+        prob_parity = [0.5, 0.5]
+        confidence_parity = 0.5
     
     # Prédire Score Range
     try:
@@ -233,22 +261,36 @@ def predict_with_trainbest_models(team_home, team_away, league, models):
         confidence_double_chance = 0.5
     
     # Prédire Clean Sheet Home
-    if "clean_sheet_home" in model_data["models"]:
-        model_clean_sheet_home = model_data["models"]["clean_sheet_home"]
-        prob_clean_sheet_home = model_clean_sheet_home.predict_proba(X)[0]
-        acc_clean_sheet_home = model_stats.get("clean_sheet_home_acc", 0.5)
-        confidence_clean_sheet_home = calculate_confidence(prob_clean_sheet_home, acc_clean_sheet_home)
-    else:
+    try:
+        if "clean_sheet_home" in model_data["models"]:
+            model_clean_sheet_home = model_data["models"]["clean_sheet_home"]
+            prob_clean_sheet_home = model_clean_sheet_home.predict_proba(X)[0]
+            acc_clean_sheet_home = model_stats.get("clean_sheet_home_acc", 0.5)
+            # S'assurer que prob_clean_sheet_home a exactement 2 éléments
+            if len(prob_clean_sheet_home) != 2:
+                prob_clean_sheet_home = [0.5, 0.5]
+            confidence_clean_sheet_home = calculate_confidence(prob_clean_sheet_home, acc_clean_sheet_home)
+        else:
+            prob_clean_sheet_home = [0.5, 0.5]
+            confidence_clean_sheet_home = 0.5
+    except Exception as e:
         prob_clean_sheet_home = [0.5, 0.5]
         confidence_clean_sheet_home = 0.5
     
     # Prédire Clean Sheet Away
-    if "clean_sheet_away" in model_data["models"]:
-        model_clean_sheet_away = model_data["models"]["clean_sheet_away"]
-        prob_clean_sheet_away = model_clean_sheet_away.predict_proba(X)[0]
-        acc_clean_sheet_away = model_stats.get("clean_sheet_away_acc", 0.5)
-        confidence_clean_sheet_away = calculate_confidence(prob_clean_sheet_away, acc_clean_sheet_away)
-    else:
+    try:
+        if "clean_sheet_away" in model_data["models"]:
+            model_clean_sheet_away = model_data["models"]["clean_sheet_away"]
+            prob_clean_sheet_away = model_clean_sheet_away.predict_proba(X)[0]
+            acc_clean_sheet_away = model_stats.get("clean_sheet_away_acc", 0.5)
+            # S'assurer que prob_clean_sheet_away a exactement 2 éléments
+            if len(prob_clean_sheet_away) != 2:
+                prob_clean_sheet_away = [0.5, 0.5]
+            confidence_clean_sheet_away = calculate_confidence(prob_clean_sheet_away, acc_clean_sheet_away)
+        else:
+            prob_clean_sheet_away = [0.5, 0.5]
+            confidence_clean_sheet_away = 0.5
+    except Exception as e:
         prob_clean_sheet_away = [0.5, 0.5]
         confidence_clean_sheet_away = 0.5
     
