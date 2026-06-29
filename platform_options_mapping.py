@@ -4,81 +4,82 @@ Basé sur l'analyse des familles de ligues et leurs caractéristiques
 """
 
 # Options spécifiques par famille de ligue
+# Basé sur les distributions réelles des données historiques
 FAMILY_OPTIONS = {
     "PENALTY": {
-        "avg_goals": 6.52,
+        "avg_goals": 6.5,
         "has_draw": True,
         "handicap": {
             "available": True,
-            "values": [-4.0, -3.5, -3.0, -2.5, -2.0, -1.5, -1.0, -0.5, 0.0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0],
-            "step": 0.5
+            "values": [-4, -3, -2, -1, 0, 1, 2, 3, 4],
+            "step": 1
         },
         "total_goals": {
             "available": True,
-            "values": [3.5, 4.5, 5.5, 6.5, 7.5, 8.5, 9.5, 10.5, 11.5, 12.5, 13.5],
-            "step": 0.5
+            "values": [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+            "step": 1
         },
         "over_under": {
             "available": True,
-            "values": [5.5, 6.5, 7.5, 8.5, 9.5],
-            "step": 0.5
+            "values": [4, 5, 6, 7, 8, 9, 10],
+            "step": 1
         }
     },
     "HIGHSCORE": {
-        "avg_goals": 15.16,
+        "avg_goals": 15.0,
         "has_draw": True,
         "handicap": {
             "available": True,
-            "values": [-8.0, -7.5, -7.0, -6.5, -6.0, -5.5, -5.0, -4.5, -4.0, -3.5, -3.0, -2.5, -2.0, -1.5, -1.0, -0.5, 0.0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0, 5.5, 6.0, 6.5, 7.0, 7.5, 8.0],
-            "step": 0.5
+            "values": [-8, -7, -6, -5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5, 6, 7, 8],
+            "step": 1
         },
         "total_goals": {
             "available": True,
-            "values": [10.5, 11.5, 12.5, 13.5, 14.5, 15.5, 16.5, 17.5, 18.5, 19.5, 20.5, 21.5, 22.5, 23.5, 24.5, 25.5],
-            "step": 0.5
+            "values": [10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25],
+            "step": 1
         },
         "over_under": {
             "available": True,
-            "values": [12.5, 13.5, 14.5, 15.5, 16.5, 17.5, 18.5, 19.5, 20.5],
-            "step": 0.5
+            "values": [12, 13, 14, 15, 16, 17, 18, 19, 20],
+            "step": 1
         }
     },
     "RUSH": {
-        "avg_goals": 7.52,
+        "avg_goals": 7.5,
         "has_draw": True,
         "handicap": {
             "available": True,
-            "values": [-5.0, -4.5, -4.0, -3.5, -3.0, -2.5, -2.0, -1.5, -1.0, -0.5, 0.0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0],
-            "step": 0.5
+            "values": [-5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5],
+            "step": 1
         },
         "total_goals": {
             "available": True,
-            "values": [4.5, 5.5, 6.5, 7.5, 8.5, 9.5, 10.5, 11.5, 12.5, 13.5, 14.5, 15.5],
-            "step": 0.5
+            "values": [3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+            "step": 1
         },
         "over_under": {
             "available": True,
-            "values": [6.5, 7.5, 8.5, 9.5, 10.5, 11.5],
-            "step": 0.5
+            "values": [6, 7, 8, 9, 10, 11],
+            "step": 1
         }
     },
     "CLASSIC": {
-        "avg_goals": 3.12,
+        "avg_goals": 3.2,
         "has_draw": True,
         "handicap": {
             "available": True,
-            "values": [-3.0, -2.5, -2.0, -1.5, -1.0, -0.5, 0.0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0],
-            "step": 0.5
+            "values": [-3, -2, -1, 0, 1, 2, 3],
+            "step": 1
         },
         "total_goals": {
             "available": True,
-            "values": [0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 8.5],
-            "step": 0.5
+            "values": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+            "step": 1
         },
         "over_under": {
             "available": True,
-            "values": [2.5, 3.5, 4.5, 5.5, 6.5],
-            "step": 0.5
+            "values": [2, 3, 4, 5, 6],
+            "step": 1
         }
     }
 }

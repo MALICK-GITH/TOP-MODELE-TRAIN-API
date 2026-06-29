@@ -38,17 +38,17 @@ FAMILIES = {
     "PENALTY": {
         "leagues": ["FC24. Penalty", "FC25. Penalty", "Penalty", "FIFA23. Penalty", "FC26. Penalty"],
         "has_draw": True,
-        "avg_goals": 6.52
+        "avg_goals": 6.5
     },
     "HIGHSCORE": {
         "leagues": ["FC 25. 3x3. Ligue de conférence", "FC 24. 4x4. Championnat d'Angleterre"],
         "has_draw": True,
-        "avg_goals": 15.16
+        "avg_goals": 15.0
     },
     "RUSH": {
         "leagues": ["FC 26. 5x5 Rush. Superligue"],
         "has_draw": True,
-        "avg_goals": 7.52
+        "avg_goals": 7.5
     },
     "CLASSIC": {
         "leagues": [
@@ -63,7 +63,7 @@ FAMILIES = {
             "World Cup 2026. Simulation"
         ],
         "has_draw": True,
-        "avg_goals": 3.12
+        "avg_goals": 3.2
     }
 }
 
