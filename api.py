@@ -25,10 +25,12 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from platform_options_mapping import map_prediction_to_platform, FAMILY_OPTIONS
+from market_parser import MarketParser, MarketOption
 import pickle
 import pandas as pd
 import numpy as np
 from scipy.stats import poisson
+from typing import Optional, Dict, Any
 
 # ──────────────────────────────────────────────────────────────────────────────
 # Configuration des familles de ligues
@@ -136,8 +138,9 @@ def calculate_confidence(probabilities, model_accuracy):
     
     return round(min(confidence, 1.0), 3)
 
-def predict_with_trainbest_models(team_home, team_away, league, models):
-    """Prédit en utilisant les modèles trainBest.py avec Poisson dynamique"""
+def predict_with_trainbest_models(team_home, team_away, league, models, market_options=None):
+    """Prédit en utilisant les modèles trainBest.py avec Poisson dynamique
+    Si market_options est fourni, utilise les options dynamiques du marché"""
     # Déterminer la famille
     family = None
     for fam, fam_data in FAMILIES.items():
@@ -359,8 +362,28 @@ def predict_with_trainbest_models(team_home, team_away, league, models):
         handicap_pred = 0.0
     
     # Mapper aux options de la plateforme
-    handicap_opt_value, handicap_opt_name = map_prediction_to_platform("handicap", handicap_pred, family)
-    total_goals_opt_value, total_goals_opt_name = map_prediction_to_platform("total_goals", total_goals_pred, family)
+    if market_options:
+        # Utiliser les options dynamiques du marché
+        handicap_opt = MarketParser.find_closest_option(handicap_pred, market_options.get("handicap", []))
+        total_goals_opt = MarketParser.find_closest_option(total_goals_pred, market_options.get("total_goals", []))
+        
+        if handicap_opt:
+            handicap_opt_value = handicap_opt.value
+            handicap_opt_name = f"Handicap {handicap_opt.value}"
+        else:
+            # Fallback aux options statiques
+            handicap_opt_value, handicap_opt_name = map_prediction_to_platform("handicap", handicap_pred, family)
+        
+        if total_goals_opt:
+            total_goals_opt_value = total_goals_opt.value
+            total_goals_opt_name = f"Total Goals {total_goals_opt.value}"
+        else:
+            # Fallback aux options statiques
+            total_goals_opt_value, total_goals_opt_name = map_prediction_to_platform("total_goals", total_goals_pred, family)
+    else:
+        # Utiliser les options statiques par défaut
+        handicap_opt_value, handicap_opt_name = map_prediction_to_platform("handicap", handicap_pred, family)
+        total_goals_opt_value, total_goals_opt_name = map_prediction_to_platform("total_goals", total_goals_pred, family)
     
     # Construire la réponse
     return {
@@ -456,6 +479,7 @@ class PredictionRequest(BaseModel):
     team_home: str = Field(..., description="Équipe domicile")
     team_away: str = Field(..., description="Équipe extérieur")
     league: str = Field(..., description="Nom de la ligue/championnat")
+    market_data: Optional[Dict[str, Any]] = Field(None, description="Données de marché optionnelles pour adapter les prédictions")
 
 class BatchPredictionRequest(BaseModel):
     matches: List[PredictionRequest] = Field(..., description="Liste des matchs à prédire")
@@ -585,8 +609,18 @@ async def predict(request: PredictionRequest):
         # Map la ligue live vers la ligue entraînée
         mapped_league = map_league(request.league)
         
-        # Générer la clé de cache
+        # Parser les options de marché si fournies
+        market_options = None
+        if request.market_data:
+            market_options = MarketParser.parse_market_data(request.market_data)
+        
+        # Générer la clé de cache (inclut les options de marché si fournies)
         cache_key = f"predict:{request.team_home}:{request.team_away}:{mapped_league}"
+        if market_options:
+            # Hash simple des options pour différencier le cache
+            import hashlib
+            options_str = str(sorted([(k, len(v)) for k, v in market_options.items()]))
+            cache_key = f"{cache_key}:{hashlib.md5(options_str.encode()).hexdigest()[:8]}"
         
         # Essayer de récupérer du cache
         if cache_instance:
@@ -600,7 +634,8 @@ async def predict(request: PredictionRequest):
             team_home=request.team_home,
             team_away=request.team_away,
             league=mapped_league,
-            models=trainbest_models
+            models=trainbest_models,
+            market_options=market_options
         )
         
         # Mettre en cache le résultat
