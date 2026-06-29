@@ -1,9 +1,9 @@
 # API INTEGRATION GUIDE - FIFA Virtual Prediction System
 
-**Production URL:** `https://top-modele-train-api-vmp.onrender.com`
+**Production URL:** `https://top-modele-train-api-3cap.onrender.com`
 
-**Version:** 5.0.0  
-**Last Updated:** 2026-06-21
+**Version:** 6.0.0  
+**Last Updated:** 2026-06-29
 
 ---
 
@@ -11,7 +11,7 @@
 
 ### Base URL
 ```
-https://top-modele-train-api-vmp.onrender.com
+https://top-modele-train-api-3cap.onrender.com
 ```
 
 ### Authentication
@@ -65,9 +65,41 @@ Content-Type: application/json
 {
   "team_home": "Chelsea",
   "team_away": "Club Atlético de Madrid",
-  "league": "FC 26. 5x5 Rush. Superligue"
+  "league": "FC 26. 5x5 Rush. Superligue",
+  "market_data": {
+    "O1": "Chelsea",
+    "O2": "Club Atlético de Madrid",
+    "L": "FC 26. 5x5 Rush. Superligue",
+    "E": [
+      {"T": 9, "P": 7.5, "C": 2.0, "G": 17},
+      {"T": 10, "P": 7.5, "C": 1.81, "G": 17}
+    ],
+    "AE": [
+      {
+        "G": 2,
+        "ME": [
+          {"T": 7, "P": -1.0, "C": 3.03, "G": 2},
+          {"T": 8, "P": -1.0, "C": 2.625, "G": 2}
+        ]
+      }
+    ]
+  }
 }
 ```
+
+**Optional Field: `market_data`**
+- Type: `object` (optional)
+- Description: Real-time market options from the betting platform API
+- When provided, predictions are mapped to the closest available market option
+- When omitted, predictions use static platform options based on league family
+- Structure:
+  - `E`: Main events array (1x2, basic over/under)
+  - `AE`: Additional events grouped by category (handicap, total goals, etc.)
+  - Each event contains:
+    - `T`: Type ID (bet type)
+    - `P`: Parameter (handicap value, threshold, etc.)
+    - `C`: Coefficient (odds)
+    - `G`: Group ID (category)
 
 **Response:**
 ```json
@@ -648,6 +680,98 @@ GET /leagues/CLASSIC
   ]
 }
 ```
+
+---
+
+## 🎯 Dynamic Market Options Integration
+
+### Overview
+The API now supports dynamic market options integration. When real-time market data is provided via the `market_data` field, predictions are automatically mapped to the closest available betting option from the actual market.
+
+### How It Works
+
+1. **Without Market Data (Static Mode)**
+   - Predictions use predefined platform options based on league family
+   - Options are static and consistent across matches in the same family
+   - Fallback mechanism for backward compatibility
+
+2. **With Market Data (Dynamic Mode)**
+   - Parse the provided market API response to extract available options
+   - Map model predictions to the closest available market option
+   - Adapts to the specific options available for each match and league
+   - Ensures predictions match what's actually bettable on the platform
+
+### Market Data Structure
+
+The `market_data` field accepts the raw JSON response from the betting platform API:
+
+```json
+{
+  "O1": "Home Team Name",
+  "O2": "Away Team Name",
+  "L": "League Name",
+  "E": [
+    {"T": 9, "P": 7.5, "C": 2.0, "G": 17},
+    {"T": 10, "P": 7.5, "C": 1.81, "G": 17}
+  ],
+  "AE": [
+    {
+      "G": 2,
+      "ME": [
+        {"T": 7, "P": -1.0, "C": 3.03, "G": 2},
+        {"T": 8, "P": -1.0, "C": 2.625, "G": 2}
+      ]
+    }
+  ]
+}
+```
+
+### Field Descriptions
+
+| Field | Description |
+|-------|-------------|
+| `O1` | Home team name |
+| `O2` | Away team name |
+| `L` | League name |
+| `E` | Main events array (1x2, basic over/under) |
+| `AE` | Additional events分组 by category |
+| `T` | Type ID (bet type identifier) |
+| `P` | Parameter (handicap value, threshold, etc.) |
+| `C` | Coefficient (odds) |
+| `G` | Group ID (category: 2=handicap, 15=over/under, 17=total goals) |
+
+### Example Comparison
+
+**Static Mode (without market_data):**
+```json
+{
+  "total_goals": {
+    "predicted": 9.8,
+    "platform_value": 10,
+    "platform_name": "Total Goals"
+  }
+}
+```
+
+**Dynamic Mode (with market_data):**
+```json
+{
+  "total_goals": {
+    "predicted": 9.8,
+    "platform_value": 9.5,
+    "platform_name": "Total Goals 9.5"
+  }
+}
+```
+
+The dynamic mode maps the prediction (9.8) to the closest available market option (9.5) instead of the static option (10).
+
+### Benefits
+
+- **Accuracy**: Predictions match actual bettable options
+- **Flexibility**: Adapts to different market formats per league
+- **Real-time**: Uses current market availability
+- **Backward Compatible**: Works without market data (static fallback)
 
 ---
 
