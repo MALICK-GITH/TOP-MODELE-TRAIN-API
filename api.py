@@ -229,7 +229,7 @@ def predict_with_trainbest_models(team_home, team_away, league, models, market_o
         prob_parity = [0.5, 0.5]
         confidence_parity = 0.5
     
-    # Prédire Score Range
+    # Prédire Score Range avec adaptation dynamique au marché
     try:
         if "score_range" in model_data["models"]:
             model_score_range = model_data["models"]["score_range"]
@@ -242,9 +242,35 @@ def predict_with_trainbest_models(team_home, team_away, league, models, market_o
         else:
             prob_score_range = [0.25, 0.25, 0.25, 0.25]
             confidence_score_range = 0.5
+        
+        # Adapter les plages de score dynamiquement selon le marché
+        score_range_labels = ["0-2", "3-5", "6-8", "9+"]
+        if market_options and market_options.get("total_goals"):
+            # Récupérer les options de total goals disponibles
+            total_goals_options = sorted([opt.value for opt in market_options["total_goals"]])
+            if total_goals_options:
+                # Créer des plages dynamiques basées sur les options disponibles
+                if len(total_goals_options) >= 4:
+                    # Diviser en 4 plages équilibrées
+                    score_range_labels = [
+                        f"0-{int(total_goals_options[0])}",
+                        f"{int(total_goals_options[0])+1}-{int(total_goals_options[len(total_goals_options)//2])}",
+                        f"{int(total_goals_options[len(total_goals_options)//2])+1}-{int(total_goals_options[-1])}",
+                        f"{int(total_goals_options[-1])+1}+"
+                    ]
+                elif len(total_goals_options) >= 2:
+                    # Moins d'options, créer 2 plages principales
+                    mid_point = total_goals_options[len(total_goals_options)//2]
+                    score_range_labels = [
+                        f"0-{int(mid_point)}",
+                        f"{int(mid_point)+1}-{int(total_goals_options[-1])}",
+                        f"{int(total_goals_options[-1])+1}-{int(total_goals_options[-1])+3}",
+                        f"{int(total_goals_options[-1])+4}+"
+                    ]
     except Exception as e:
         prob_score_range = [0.25, 0.25, 0.25, 0.25]
         confidence_score_range = 0.5
+        score_range_labels = ["0-2", "3-5", "6-8", "9+"]
     
     # Prédire Double Chance
     try:
@@ -423,10 +449,10 @@ def predict_with_trainbest_models(team_home, team_away, league, models, market_o
                 "confidence": confidence_parity
             },
             "score_range": {
-                "0-2": round(prob_score_range[0], 3),
-                "3-5": round(prob_score_range[1], 3),
-                "6-8": round(prob_score_range[2], 3),
-                "9+": round(prob_score_range[3], 3),
+                score_range_labels[0]: round(prob_score_range[0], 3),
+                score_range_labels[1]: round(prob_score_range[1], 3),
+                score_range_labels[2]: round(prob_score_range[2], 3),
+                score_range_labels[3]: round(prob_score_range[3], 3),
                 "confidence": confidence_score_range
             },
             "double_chance": {
