@@ -2,12 +2,32 @@
 
 **Production URL:** `https://top-modele-train-api-3cap.onrender.com`
 
-**Version:** 7.1.0  
+**Version:** 7.2.0  
 **Last Updated:** 2026-07-01
 
 ---
 
 ## 📋 Changelog
+
+### v7.2.0 (2026-07-01)
+- **Market Data Analysis Integration:** Complete analysis of FIFA market data JSON to understand league patterns
+- **New League Families:** Added ENGLAND, CHAMPIONS, and WORLD families based on market data analysis
+- **Family-Specific Score Ranges:** Implemented dynamic score range labels per family:
+  - RUSH: ["0-2", "3-5", "6-8", "9+"]
+  - ENGLAND: ["0-8", "9-12", "13-16", "17+"]
+  - CLASSIC: ["0-2", "3-4", "5-6", "7+"]
+  - CHAMPIONS: ["0-2", "3-4", "5-6", "7+"]
+  - WORLD: ["0-2", "3-4", "5-6", "7+"]
+- **Game Format Features:** Added game format detection (3x3, 4x4, 5x5, 11v11) in training pipeline
+- **Updated Platform Options Mapping:** Enhanced handicap, total_goals, and over_under values per family based on real market data
+- **Model Training Results:**
+  - PENALTY: 9,631 matches, BTTS 93.0%, Clean Sheet Home 85.5%, Clean Sheet Away 90.5%
+  - RUSH: 1,360 matches, BTTS 95.2%, Clean Sheet Home 96.3%, Clean Sheet Away 96.7%
+  - CLASSIC: 6,778 matches, BTTS 70.9%, Draw No Bet 61.5%, Score Range 52.8%
+  - ENGLAND: 1,530 matches, BTTS 99.7%, Over/Under 71.9%, Clean Sheet Away 100.0%
+  - CHAMPIONS: 915 matches, Over/Under 66.1%, Draw No Bet 59.6%
+  - WORLD: 1,407 matches, Draw No Bet 63.5%, 1X2 50.4%
+- **API Updates:** Integrated new families in API endpoint and model loading
 
 ### v7.1.0 (2026-07-01)
 - **Dynamic Score Range Adaptation:** Score ranges now adapt dynamically to market options
@@ -458,178 +478,272 @@ GET /model-info
 **Response:**
 ```json
 {
-  "version": "7.1.0",
-  "families": ["PENALTY", "HIGHSCORE", "RUSH", "CLASSIC"],
+  "version": "7.2.0",
+  "families": ["PENALTY", "HIGHSCORE", "RUSH", "CLASSIC", "ENGLAND", "CHAMPIONS", "WORLD"],
   "models": {
     "PENALTY": {
       "models": ["1x2", "over_under", "btts", "parity", "score_range", "double_chance", "clean_sheet_home", "clean_sheet_away", "draw_no_bet", "win_both_halves", "total_goals_regressor", "handicap_regressor"],
-      "matches": 9682,
+      "matches": 9631,
       "leagues_count": 5,
       "leagues_sample": ["FC24. Penalty", "FC25. Penalty", "Penalty", "FIFA23. Penalty", "FC26. Penalty"],
       "has_regression": true,
       "accuracy": {
-        "1x2": 0.500,
-        "over_under": 0.632,
+        "1x2": 0.509,
+        "over_under": 0.634,
         "btts": 0.930,
-        "parity": 0.657,
-        "score_range": 0.418,
-        "double_chance": 0.511,
+        "parity": 0.661,
+        "score_range": 0.417,
+        "double_chance": 0.522,
         "clean_sheet_home": 0.855,
-        "clean_sheet_away": 0.893,
-        "draw_no_bet": 0.515,
-        "win_both_halves": 0.818
+        "clean_sheet_away": 0.905,
+        "draw_no_bet": 0.514,
+        "win_both_halves": 0.806
       }
     },
     "HIGHSCORE": {
       "models": ["1x2", "over_under", "btts", "parity", "score_range", "double_chance", "clean_sheet_home", "clean_sheet_away", "draw_no_bet", "win_both_halves", "total_goals_regressor", "handicap_regressor"],
-      "matches": 3618,
-      "leagues_count": 2,
-      "leagues_sample": ["FC 25. 3x3. Ligue de conférence", "FC 24. 4x4. Championnat d'Angleterre"],
+      "matches": 0,
+      "leagues_count": 1,
+      "leagues_sample": ["FC 25. 3x3. Ligue de conférence"],
       "has_regression": true,
-      "accuracy": {
-        "1x2": 0.486,
-        "over_under": 0.727,
-        "btts": 0.997,
-        "parity": 0.515,
-        "score_range": 0.953,
-        "double_chance": 0.493,
-        "clean_sheet_home": 1.000,
-        "clean_sheet_away": 0.999,
-        "draw_no_bet": 0.557,
-        "win_both_halves": 0.997
-      }
+      "accuracy": {},
+      "note": "Insufficient matches for training"
     },
     "RUSH": {
       "models": ["1x2", "over_under", "btts", "parity", "score_range", "double_chance", "clean_sheet_home", "clean_sheet_away", "draw_no_bet", "win_both_halves", "total_goals_regressor", "handicap_regressor"],
-      "matches": 1549,
+      "matches": 1360,
       "leagues_count": 1,
       "leagues_sample": ["FC 26. 5x5 Rush. Superligue"],
       "has_regression": true,
       "accuracy": {
-        "1x2": 0.471,
-        "over_under": 0.626,
-        "btts": 0.955,
-        "parity": 0.584,
-        "score_range": 0.439,
-        "double_chance": 0.435,
-        "clean_sheet_home": 0.955,
-        "clean_sheet_away": 0.968,
-        "draw_no_bet": 0.539,
-        "win_both_halves": 0.926
+        "1x2": 0.412,
+        "over_under": 0.640,
+        "btts": 0.952,
+        "parity": 0.540,
+        "score_range": 0.427,
+        "double_chance": 0.478,
+        "clean_sheet_home": 0.963,
+        "clean_sheet_away": 0.967,
+        "draw_no_bet": 0.566,
+        "win_both_halves": 0.941
       }
     },
     "CLASSIC": {
       "models": ["1x2", "over_under", "btts", "parity", "score_range", "double_chance", "clean_sheet_home", "clean_sheet_away", "draw_no_bet", "win_both_halves", "total_goals_regressor", "handicap_regressor"],
-      "matches": 8082,
-      "leagues_count": 10,
-      "leagues_sample": ["FC 25. Champions League", "FC 26. Champions League", "FC 25. Championnat d'Espagne", "FC 25. Championnat d'Angleterre", "FC 25. Ligue européenne"],
+      "matches": 6778,
+      "leagues_count": 6,
+      "leagues_sample": ["FC 25. Champions League", "FC 25. Championnat d'Espagne", "FC 25. Championnat d'Angleterre", "FC 25. Ligue européenne", "FC 25. Italy Championship"],
       "has_regression": true,
       "accuracy": {
-        "1x2": 0.520,
-        "over_under": 0.623,
-        "btts": 0.607,
-        "parity": 0.499,
-        "score_range": 0.532,
-        "double_chance": 0.503,
-        "clean_sheet_home": 0.629,
-        "clean_sheet_away": 0.633,
-        "draw_no_bet": 0.656,
-        "win_both_halves": 0.558
+        "1x2": 0.505,
+        "over_under": 0.636,
+        "btts": 0.709,
+        "parity": 0.518,
+        "score_range": 0.528,
+        "double_chance": 0.521,
+        "clean_sheet_home": 0.667,
+        "clean_sheet_away": 0.636,
+        "draw_no_bet": 0.615,
+        "win_both_halves": 0.566
+      }
+    },
+    "ENGLAND": {
+      "models": ["1x2", "over_under", "btts", "parity", "score_range", "double_chance", "clean_sheet_home", "clean_sheet_away", "draw_no_bet", "win_both_halves", "total_goals_regressor", "handicap_regressor"],
+      "matches": 1530,
+      "leagues_count": 1,
+      "leagues_sample": ["FC 24. 4x4. Championnat d'Angleterre"],
+      "has_regression": true,
+      "accuracy": {
+        "1x2": 0.484,
+        "over_under": 0.719,
+        "btts": 0.997,
+        "parity": 0.523,
+        "score_range": 0.520,
+        "double_chance": 0.480,
+        "clean_sheet_home": 0.997,
+        "clean_sheet_away": 1.000,
+        "draw_no_bet": 0.588,
+        "win_both_halves": 0.997
+      }
+    },
+    "CHAMPIONS": {
+      "models": ["1x2", "over_under", "btts", "parity", "score_range", "double_chance", "clean_sheet_home", "clean_sheet_away", "draw_no_bet", "win_both_halves", "total_goals_regressor", "handicap_regressor"],
+      "matches": 915,
+      "leagues_count": 1,
+      "leagues_sample": ["FC 26. Champions League"],
+      "has_regression": true,
+      "accuracy": {
+        "1x2": 0.497,
+        "over_under": 0.661,
+        "btts": 0.650,
+        "parity": 0.481,
+        "score_range": 0.426,
+        "double_chance": 0.514,
+        "clean_sheet_home": 0.694,
+        "clean_sheet_away": 0.732,
+        "draw_no_bet": 0.596,
+        "win_both_halves": 0.508
+      }
+    },
+    "WORLD": {
+      "models": ["1x2", "over_under", "btts", "parity", "score_range", "double_chance", "clean_sheet_home", "clean_sheet_away", "draw_no_bet", "win_both_halves", "total_goals_regressor", "handicap_regressor"],
+      "matches": 1407,
+      "leagues_count": 2,
+      "leagues_sample": ["FC 26. Championnat du monde", "World Cup 2026. Simulation"],
+      "has_regression": true,
+      "accuracy": {
+        "1x2": 0.504,
+        "over_under": 0.614,
+        "btts": 0.603,
+        "parity": 0.532,
+        "score_range": 0.436,
+        "double_chance": 0.525,
+        "clean_sheet_home": 0.592,
+        "clean_sheet_away": 0.617,
+        "draw_no_bet": 0.635,
+        "win_both_halves": 0.539
       }
     }
   },
   "cache_enabled": true,
-  "total_matches": 23372,
-  "total_leagues": 18
+  "total_matches": 21621,
+  "total_leagues": 17
 }
 ```
 
 **Actual API Response:**
 ```json
 {
-  "version": "7.1.0",
-  "families": ["PENALTY", "HIGHSCORE", "RUSH", "CLASSIC"],
+  "version": "7.2.0",
+  "families": ["PENALTY", "HIGHSCORE", "RUSH", "CLASSIC", "ENGLAND", "CHAMPIONS", "WORLD"],
   "models": {
     "PENALTY": {
       "models": ["1x2", "over_under", "btts", "parity", "score_range", "double_chance", "clean_sheet_home", "clean_sheet_away", "draw_no_bet", "win_both_halves", "total_goals_regressor", "handicap_regressor"],
-      "matches": 9682,
+      "matches": 9631,
       "leagues_count": 5,
       "leagues_sample": ["FC24. Penalty", "FC25. Penalty", "Penalty", "FIFA23. Penalty", "FC26. Penalty"],
       "has_regression": true,
       "accuracy": {
-        "1x2": 0.500,
-        "over_under": 0.632,
+        "1x2": 0.509,
+        "over_under": 0.634,
         "btts": 0.930,
-        "parity": 0.657,
-        "score_range": 0.418,
-        "double_chance": 0.511,
+        "parity": 0.661,
+        "score_range": 0.417,
+        "double_chance": 0.522,
         "clean_sheet_home": 0.855,
-        "clean_sheet_away": 0.893,
-        "draw_no_bet": 0.515,
-        "win_both_halves": 0.818
+        "clean_sheet_away": 0.905,
+        "draw_no_bet": 0.514,
+        "win_both_halves": 0.806
       }
     },
     "HIGHSCORE": {
       "models": ["1x2", "over_under", "btts", "parity", "score_range", "double_chance", "clean_sheet_home", "clean_sheet_away", "draw_no_bet", "win_both_halves", "total_goals_regressor", "handicap_regressor"],
-      "matches": 3618,
-      "leagues_count": 2,
-      "leagues_sample": ["FC 25. 3x3. Ligue de conférence", "FC 24. 4x4. Championnat d'Angleterre"],
+      "matches": 0,
+      "leagues_count": 1,
+      "leagues_sample": ["FC 25. 3x3. Ligue de conférence"],
       "has_regression": true,
-      "accuracy": {
-        "1x2": 0.486,
-        "over_under": 0.727,
-        "btts": 0.997,
-        "parity": 0.515,
-        "score_range": 0.953,
-        "double_chance": 0.493,
-        "clean_sheet_home": 1.000,
-        "clean_sheet_away": 0.999,
-        "draw_no_bet": 0.557,
-        "win_both_halves": 0.997
-      }
+      "accuracy": {},
+      "note": "Insufficient matches for training"
     },
     "RUSH": {
       "models": ["1x2", "over_under", "btts", "parity", "score_range", "double_chance", "clean_sheet_home", "clean_sheet_away", "draw_no_bet", "win_both_halves", "total_goals_regressor", "handicap_regressor"],
-      "matches": 1549,
+      "matches": 1360,
       "leagues_count": 1,
       "leagues_sample": ["FC 26. 5x5 Rush. Superligue"],
       "has_regression": true,
       "accuracy": {
-        "1x2": 0.471,
-        "over_under": 0.626,
-        "btts": 0.955,
-        "parity": 0.584,
-        "score_range": 0.439,
-        "double_chance": 0.435,
-        "clean_sheet_home": 0.955,
-        "clean_sheet_away": 0.968,
-        "draw_no_bet": 0.539,
-        "win_both_halves": 0.926
+        "1x2": 0.412,
+        "over_under": 0.640,
+        "btts": 0.952,
+        "parity": 0.540,
+        "score_range": 0.427,
+        "double_chance": 0.478,
+        "clean_sheet_home": 0.963,
+        "clean_sheet_away": 0.967,
+        "draw_no_bet": 0.566,
+        "win_both_halves": 0.941
       }
     },
     "CLASSIC": {
       "models": ["1x2", "over_under", "btts", "parity", "score_range", "double_chance", "clean_sheet_home", "clean_sheet_away", "draw_no_bet", "win_both_halves", "total_goals_regressor", "handicap_regressor"],
-      "matches": 8082,
-      "leagues_count": 10,
-      "leagues_sample": ["FC 25. Champions League", "FC 26. Champions League", "FC 25. Championnat d'Espagne", "FC 25. Championnat d'Angleterre", "FC 25. Ligue européenne"],
+      "matches": 6778,
+      "leagues_count": 6,
+      "leagues_sample": ["FC 25. Champions League", "FC 25. Championnat d'Espagne", "FC 25. Championnat d'Angleterre", "FC 25. Ligue européenne", "FC 25. Italy Championship"],
       "has_regression": true,
       "accuracy": {
-        "1x2": 0.520,
-        "over_under": 0.623,
-        "btts": 0.607,
-        "parity": 0.499,
-        "score_range": 0.532,
-        "double_chance": 0.503,
-        "clean_sheet_home": 0.629,
-        "clean_sheet_away": 0.633,
-        "draw_no_bet": 0.656,
-        "win_both_halves": 0.558
+        "1x2": 0.505,
+        "over_under": 0.636,
+        "btts": 0.709,
+        "parity": 0.518,
+        "score_range": 0.528,
+        "double_chance": 0.521,
+        "clean_sheet_home": 0.667,
+        "clean_sheet_away": 0.636,
+        "draw_no_bet": 0.615,
+        "win_both_halves": 0.566
+      }
+    },
+    "ENGLAND": {
+      "models": ["1x2", "over_under", "btts", "parity", "score_range", "double_chance", "clean_sheet_home", "clean_sheet_away", "draw_no_bet", "win_both_halves", "total_goals_regressor", "handicap_regressor"],
+      "matches": 1530,
+      "leagues_count": 1,
+      "leagues_sample": ["FC 24. 4x4. Championnat d'Angleterre"],
+      "has_regression": true,
+      "accuracy": {
+        "1x2": 0.484,
+        "over_under": 0.719,
+        "btts": 0.997,
+        "parity": 0.523,
+        "score_range": 0.520,
+        "double_chance": 0.480,
+        "clean_sheet_home": 0.997,
+        "clean_sheet_away": 1.000,
+        "draw_no_bet": 0.588,
+        "win_both_halves": 0.997
+      }
+    },
+    "CHAMPIONS": {
+      "models": ["1x2", "over_under", "btts", "parity", "score_range", "double_chance", "clean_sheet_home", "clean_sheet_away", "draw_no_bet", "win_both_halves", "total_goals_regressor", "handicap_regressor"],
+      "matches": 915,
+      "leagues_count": 1,
+      "leagues_sample": ["FC 26. Champions League"],
+      "has_regression": true,
+      "accuracy": {
+        "1x2": 0.497,
+        "over_under": 0.661,
+        "btts": 0.650,
+        "parity": 0.481,
+        "score_range": 0.426,
+        "double_chance": 0.514,
+        "clean_sheet_home": 0.694,
+        "clean_sheet_away": 0.732,
+        "draw_no_bet": 0.596,
+        "win_both_halves": 0.508
+      }
+    },
+    "WORLD": {
+      "models": ["1x2", "over_under", "btts", "parity", "score_range", "double_chance", "clean_sheet_home", "clean_sheet_away", "draw_no_bet", "win_both_halves", "total_goals_regressor", "handicap_regressor"],
+      "matches": 1407,
+      "leagues_count": 2,
+      "leagues_sample": ["FC 26. Championnat du monde", "World Cup 2026. Simulation"],
+      "has_regression": true,
+      "accuracy": {
+        "1x2": 0.504,
+        "over_under": 0.614,
+        "btts": 0.603,
+        "parity": 0.532,
+        "score_range": 0.436,
+        "double_chance": 0.525,
+        "clean_sheet_home": 0.592,
+        "clean_sheet_away": 0.617,
+        "draw_no_bet": 0.635,
+        "win_both_halves": 0.539
       }
     }
   },
   "cache_enabled": true,
-  "total_matches": 23372,
-  "total_leagues": 18
+  "total_matches": 21621,
+  "total_leagues": 17
 }
 ```
 

@@ -45,14 +45,15 @@ args = parser.parse_args()
 os.makedirs(args.models, exist_ok=True)
 
 # ─── Familles ─────────────────────────────────────────────────────────────────
+# Basé sur l'analyse des données de marché JSON (2026-07-01)
 FAMILIES = {
     "FC24. Penalty":                         "PENALTY",
     "FC25. Penalty":                         "PENALTY",
     "FC26. Penalty":                         "PENALTY",
     "FIFA23. Penalty":                       "PENALTY",
     "Penalty":                               "PENALTY",
-    "FC 24. 4x4. Championnat d'Angleterre":  "HIGHSCORE",
-    "FC 25. 3x3. Ligue de conférence":       "HIGHSCORE",
+    "FC 24. 4x4. Championnat d'Angleterre":  "ENGLAND",
+    "FC 25. 3x3. Ligue de conférence":       "CLASSIC",
     "FC 26. 5x5 Rush. Superligue":           "RUSH",
     "FC 25. Championnat d'Allemagne":        "CLASSIC",
     "FC 25. Championnat d'Angleterre":       "CLASSIC",
@@ -60,16 +61,28 @@ FAMILIES = {
     "FC 25. Champions League":               "CLASSIC",
     "FC 25. Italy Championship":             "CLASSIC",
     "FC 25. Ligue européenne":               "CLASSIC",
-    "FC 26. Championnat du monde":           "CLASSIC",
-    "FC 26. Champions League":               "CLASSIC",
-    "World Cup 2026. Simulation":            "CLASSIC",
+    "FC 26. Championnat du monde":           "WORLD",
+    "FC 26. Champions League":               "CHAMPIONS",
+    "World Cup 2026. Simulation":            "WORLD",
 }
 
-# ─── Seuils O/U par ligue ─────────────────────────────────────────────────────
+# ─── Format de jeu par ligue (basé sur l'analyse) ───────────────────────────────
+GAME_FORMATS = {
+    "FC 24. 4x4. Championnat d'Angleterre":  "4x4",
+    "FC 25. 3x3. Ligue de conférence":       "3x3",
+    "FC 26. 5x5 Rush. Superligue":           "5x5",
+    "FC 26. Champions League":               "11v11",
+    "FC 26. Championnat du monde":           "11v11",
+}
+DEFAULT_FORMAT = "11v11"
+
+# ─── Seuils O/U par ligue (basé sur l'analyse des données de marché) ─────────────
 THRESHOLDS = {
     "FC 24. 4x4. Championnat d'Angleterre":  13.5,
     "FC 25. 3x3. Ligue de conférence":       13.5,
     "FC 26. 5x5 Rush. Superligue":           6.5,
+    "FC 26. Champions League":               2.5,
+    "FC 26. Championnat du monde":           2.5,
     "FC24. Penalty":                          6.5,
     "FC25. Penalty":                          6.5,
     "FC26. Penalty":                          4.5,
@@ -84,8 +97,9 @@ df = pd.read_csv(args.input)
 df["finished_at"] = pd.to_datetime(df["finished_at"], format="ISO8601")
 df = df.sort_values("finished_at").reset_index(drop=True)
 df["family"] = df["league"].map(FAMILIES).fillna("CLASSIC")
+df["game_format"] = df["league"].map(GAME_FORMATS).fillna(DEFAULT_FORMAT)
 df["total_goals"] = df["score_home"] + df["score_away"]
-print(f"✅ {len(df)} matchs | {df['league'].nunique()} ligues | {df['family'].nunique()} familles\n")
+print(f"✅ {len(df)} matchs | {df['league'].nunique()} ligues | {df['family'].nunique()} familles | {df['game_format'].nunique()} formats\n")
 
 # ─── Construction des features historiques ───────────────────────────────────
 print("⚙️  Calcul des features...")
@@ -155,6 +169,72 @@ def get_h2h_stats(home, away, window=10):
                 h2h_avg_gf=round(np.mean(goals_h),3),
                 h2h_avg_ga=round(np.mean(goals_a),3))
 
+def get_score_range(total_goals, family):
+    """
+    Retourne l'index du score range basé sur la famille de ligue
+    Basé sur l'analyse des données de marché JSON (2026-07-01)
+    """
+    if family == "RUSH":
+        # RUSH: ["0-2", "3-5", "6-8", "9+"]
+        if total_goals <= 2:
+            return 0
+        elif total_goals <= 5:
+            return 1
+        elif total_goals <= 8:
+            return 2
+        else:
+            return 3
+    elif family == "ENGLAND":
+        # ENGLAND: ["0-8", "9-12", "13-16", "17+"]
+        if total_goals <= 8:
+            return 0
+        elif total_goals <= 12:
+            return 1
+        elif total_goals <= 16:
+            return 2
+        else:
+            return 3
+    elif family == "CLASSIC":
+        # CLASSIC: ["0-2", "3-4", "5-6", "7+"]
+        if total_goals <= 2:
+            return 0
+        elif total_goals <= 4:
+            return 1
+        elif total_goals <= 6:
+            return 2
+        else:
+            return 3
+    elif family == "CHAMPIONS":
+        # CHAMPIONS: ["0-2", "3-4", "5-6", "7+"]
+        if total_goals <= 2:
+            return 0
+        elif total_goals <= 4:
+            return 1
+        elif total_goals <= 6:
+            return 2
+        else:
+            return 3
+    elif family == "WORLD":
+        # WORLD: ["0-2", "3-4", "5-6", "7+"]
+        if total_goals <= 2:
+            return 0
+        elif total_goals <= 4:
+            return 1
+        elif total_goals <= 6:
+            return 2
+        else:
+            return 3
+    else:
+        # Default fallback (PENALTY, HIGHSCORE)
+        if total_goals <= 2:
+            return 0
+        elif total_goals <= 5:
+            return 1
+        elif total_goals <= 8:
+            return 2
+        else:
+            return 3
+
 # ─── Construction du dataset enrichi ─────────────────────────────────────────
 MIN_MATCHES_GLOBAL  = 5
 MIN_MATCHES_FAMILY  = 3
@@ -215,6 +295,7 @@ for _, match in df.iterrows():
         "match_id":  match["match_id"],
         "league":    league,
         "family":    family,
+        "game_format": match["game_format"],
         "team_home": home,
         "team_away": away,
         "threshold": threshold,
@@ -271,7 +352,7 @@ for _, match in df.iterrows():
         "score_away": ga,
         "total_goals":total,
         "handicap":   gh - ga,
-        "score_range": 0 if total <= 2 else (1 if total <= 5 else (2 if total <= 8 else 3)),
+        "score_range": get_score_range(total, family),
         "double_chance": 0 if result == 0 else (1 if result == 2 else 2),  # 0=1X, 1=X2, 2=12
         "draw_no_bet": 0 if result == 0 else (1 if result == 2 else 0.5),  # 0=home, 1=away, 0.5=draw
         "win_both_halves": 1 if (gh > 0 and ga > 0) else 0,  # Simplifié - nécessiterait données par mi-temps
@@ -289,7 +370,7 @@ train_df = pd.DataFrame(rows)
 print(f"✅ Dataset enrichi : {len(train_df)} matchs | {len(train_df.columns)} colonnes | {skipped} ignorés\n")
 
 # ─── Features pour ML ─────────────────────────────────────────────────────────
-META   = ["match_id","league","family","team_home","team_away","threshold",
+META   = ["match_id","league","family","game_format","team_home","team_away","threshold",
           "result","over_under","btts","parity","score_home","score_away","total_goals","handicap","score_range",
           "double_chance","draw_no_bet","win_both_halves","clean_sheet_home","clean_sheet_away"]
 FEATURES = [c for c in train_df.columns if c not in META]
@@ -299,7 +380,7 @@ print(f"📊 {len(FEATURES)} features d'entraînement")
 # ─── Entraînement par famille ─────────────────────────────────────────────────
 summary = []
 
-for family in ["PENALTY", "HIGHSCORE", "RUSH", "CLASSIC"]:
+for family in ["PENALTY", "HIGHSCORE", "RUSH", "CLASSIC", "ENGLAND", "CHAMPIONS", "WORLD"]:
     fdf = train_df[train_df["family"] == family].copy()
     print(f"\n{'─'*60}")
     print(f"🏆 Famille : {family}  ({len(fdf)} matchs)")

@@ -43,7 +43,7 @@ FAMILIES = {
         "avg_goals": 6.5
     },
     "HIGHSCORE": {
-        "leagues": ["FC 25. 3x3. Ligue de conférence", "FC 24. 4x4. Championnat d'Angleterre"],
+        "leagues": ["FC 25. 3x3. Ligue de conférence"],
         "has_draw": True,
         "avg_goals": 15.0
     },
@@ -52,20 +52,32 @@ FAMILIES = {
         "has_draw": True,
         "avg_goals": 7.5
     },
+    "ENGLAND": {
+        "leagues": ["FC 24. 4x4. Championnat d'Angleterre"],
+        "has_draw": True,
+        "avg_goals": 12.0
+    },
     "CLASSIC": {
         "leagues": [
             "FC 25. Champions League",
-            "FC 26. Champions League",
             "FC 25. Championnat d'Espagne",
             "FC 25. Championnat d'Angleterre",
             "FC 25. Ligue européenne",
-            "FC 26. Championnat du monde",
             "FC 25. Italy Championship",
-            "FC 25. Championnat d'Allemagne",
-            "World Cup 2026. Simulation"
+            "FC 25. Championnat d'Allemagne"
         ],
         "has_draw": True,
         "avg_goals": 3.2
+    },
+    "CHAMPIONS": {
+        "leagues": ["FC 26. Champions League"],
+        "has_draw": True,
+        "avg_goals": 3.5
+    },
+    "WORLD": {
+        "leagues": ["FC 26. Championnat du monde", "World Cup 2026. Simulation"],
+        "has_draw": True,
+        "avg_goals": 3.5
     }
 }
 
@@ -117,7 +129,7 @@ app = FastAPI(
 def load_trainbest_models(model_dir="models"):
     """Charge les modèles entraînés avec trainBest.py"""
     models = {}
-    for family in ["PENALTY", "HIGHSCORE", "RUSH", "CLASSIC"]:
+    for family in ["PENALTY", "HIGHSCORE", "RUSH", "CLASSIC", "ENGLAND", "CHAMPIONS", "WORLD"]:
         model_path = f"{model_dir}/{family}.pkl"
         try:
             with open(model_path, "rb") as f:
@@ -243,9 +255,14 @@ def predict_with_trainbest_models(team_home, team_away, league, models, market_o
             prob_score_range = [0.25, 0.25, 0.25, 0.25]
             confidence_score_range = 0.5
         
-        # Adapter les plages de score dynamiquement selon le marché
+        # Adapter les plages de score dynamiquement selon le marché et la famille
         score_range_labels = ["0-2", "3-5", "6-8", "9+"]
-        if market_options and market_options.get("total_goals"):
+        
+        # Priorité 1: Utiliser les labels spécifiques à la famille depuis platform_options_mapping
+        if family in FAMILY_OPTIONS and "score_range_labels" in FAMILY_OPTIONS[family]:
+            score_range_labels = FAMILY_OPTIONS[family]["score_range_labels"]
+        # Priorité 2: Adapter dynamiquement selon les options de marché si disponibles
+        elif market_options and market_options.get("total_goals"):
             # Récupérer les options de total goals disponibles
             total_goals_options = sorted([opt.value for opt in market_options["total_goals"]])
             if total_goals_options:
